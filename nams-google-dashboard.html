@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nam's Projects — Google Sheets Dashboard</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; font-size: 14px; }
+  header { background: #fff; border-bottom: 1px solid #e5e5e0; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 16px; font-weight: 600; }
+  .logo span { color: #1D9E75; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .sync-btn { background: #1D9E75; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 500; }
+  .sync-btn:hover { background: #0F6E56; }
+  .sync-btn:disabled { background: #9FE1CB; cursor: not-allowed; }
+  .sync-info { font-size: 12px; color: #888; }
+  .main { max-width: 1300px; margin: 0 auto; padding: 24px 16px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .metric { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e5e5e0; }
+  .metric-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .metric-value { font-size: 28px; font-weight: 600; }
+  .metric-sub { font-size: 11px; color: #aaa; margin-top: 3px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: #fff; border-radius: 10px; padding: 6px; border: 1px solid #e5e5e0; width: fit-content; }
+  .tab { padding: 8px 18px; border-radius: 7px; border: none; background: none; font-size: 13px; color: #666; cursor: pointer; font-weight: 500; transition: all .15s; }
+  .tab.active { background: #1D9E75; color: #fff; }
+  .tab:hover:not(.active) { background: #f0f0ec; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: #fff; border-radius: 10px; border: 1px solid #e5e5e0; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-btn { padding: 5px 12px; border-radius: 999px; border: 1px solid #e5e5e0; background: #fff; font-size: 12px; cursor: pointer; color: #555; }
+  .filter-btn.active { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e5e0; font-size: 12px; font-weight: 600; color: #888; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0ec; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+  .b-done { background: #EAF3DE; color: #3B6D11; }
+  .b-wait { background: #FAEEDA; color: #854F0B; }
+  .b-doing { background: #FBEAF0; color: #993556; }
+  .b-new { background: #E6F1FB; color: #185FA5; }
+  .b-air { background: #EEEDFE; color: #3C3489; }
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .flabel { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e5e5e0; border-radius: 8px; font-size: 13px; color: #1a1a1a; background: #fff; outline: none; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { border-color: #1D9E75; box-shadow: 0 0 0 3px rgba(29,158,117,.1); }
+  textarea { height: 72px; resize: vertical; }
+  .btn-submit { background: #1D9E75; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  .btn-submit:hover { background: #0F6E56; }
+  .btn-submit:disabled { background: #9FE1CB; cursor: not-allowed; }
+  .toast { font-size: 12px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; display: none; font-weight: 500; }
+  .toast-ok { background: #EAF3DE; color: #3B6D11; border: 1px solid #C0DD97; }
+  .toast-err { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+  .loading-row { text-align: center; padding: 40px; color: #aaa; font-size: 13px; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #e5e5e0; border-top-color: #1D9E75; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .proj-tag { font-size: 11px; padding: 2px 8px; border-radius: 5px; background: #f0f0ec; color: #555; font-weight: 500; }
+  .p1 { color: #A32D2D; font-weight: 600; }
+  .p2 { color: #854F0B; }
+  .p3 { color: #888; }
+  .table-wrap { overflow-x: auto; }
+  @media (max-width: 768px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Nam's <span>Projects</span> <span style="font-size:11px;color:#aaa;font-weight:400">· Google Sheets</span></div>
+  <div class="header-right">
+    <span class="sync-info" id="sync-info">Chưa sync</span>
+    <button class="sync-btn" id="sync-btn" onclick="loadAllSheets()">Sync dữ liệu</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Tổng dự án</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">đang ONGOING</div></div>
+    <div class="metric"><div class="metric-label">Cần xử lý</div><div class="metric-value" id="m-warn" style="color:#BA7517">—</div><div class="metric-sub">đang đợi / đang làm</div></div>
+    <div class="metric"><div class="metric-label">Hoàn thành</div><div class="metric-value" id="m-done" style="color:#1D9E75">—</div><div class="metric-sub">tasks đã xong</div></div>
+    <div class="metric"><div class="metric-label">Tổng tasks</div><div class="metric-value" id="m-tasks">—</div><div class="metric-sub">trong tất cả dự án</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="switchTab('update')">Cập nhật tiến độ</button>
+    <button class="tab" onclick="switchTab('add')">Thêm task mới</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="section active">
+    <div class="card">
+      <div class="card-title">Lọc theo dự án</div>
+      <div class="filter-row" id="proj-filter"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Danh sách công việc</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Dự án</th><th>Nhóm</th><th>Công việc</th><th>Người làm</th>
+            <th>Deadline</th><th>Ưu tiên</th><th>Trạng thái</th><th>Ghi chú</th>
+          </tr></thead>
+          <tbody id="task-table"><tr><td colspan="8" class="loading-row">Nhấn "Sync dữ liệu" để tải từ Google Sheets</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPDATE -->
+  <div id="tab-update" class="section">
+    <div class="card">
+      <div class="card-title">Cập nhật tiến độ công việc</div>
+      <div class="form-grid">
+        <div><div class="flabel">Dự án *</div>
+          <select id="u-sheet"><option value="">-- Chọn dự án --</option></select>
+        </div>
+        <div><div class="flabel">Nhóm công việc</div>
+          <select id="u-group">
+            <option>PLAN</option><option>KỊCH BẢN</option><option>CONTENT</option>
+            <option>DESIGN</option><option>PRODUCTION</option><option>EDIT VIDEO</option>
+          </select>
+        </div>
+        <div><div class="flabel">Tên công việc *</div>
+          <input type="text" id="u-task" placeholder="VD: Post 1 - Đợt 1, Kịch bản 3...">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><div class="flabel">Trạng thái mới *</div>
+          <select id="u-status">
+            <option>Hoàn thành</option><option>Đang thực hiện</option><option>Đang đợi duyệt</option>
+            <option>Khách đã duyệt</option><option>Đã gửi khách</option><option>Mới</option><option>Đã AIR</option>
+          </select>
+        </div>
+        <div><div class="flabel">Người phụ trách</div>
+          <select id="u-person">
+            <option>MR TÀI</option><option>MS DIỆP</option><option>MR HUY</option>
+            <option>MR HẢI ANH</option><option>MR TUYÊN</option><option>MS NHI</option><option>MR HƯNG</option><option>MR SƠN</option>
+          </select>
+        </div>
+        <div><div class="flabel">Ngày duyệt</div><input type="date" id="u-date"></div>
+      </div>
+      <div style="margin-bottom:16px"><div class="flabel">Ghi chú</div><textarea id="u-note" placeholder="Ghi chú thêm..."></textarea></div>
+      <button class="btn-submit" id="u-btn" onclick="updateTask()">Lưu vào Google Sheets</button>
+      <div class="toast" id="u-toast"></div>
+    </div>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="section">
+    <div class="card">
+      <div class="card-title">Thêm task mới</div>
+      <div class="form-grid">
+        <div><div class="flabel">Dự án *</div>
+          <select id="a-sheet"><option value="">-- Chọn dự án --</option></select>
+        </div>
+        <div><div class="flabel">Nhóm công việc</div>
+          <select id="a-group">
+            <option>PLAN</option><option>KỊCH BẢN</option><option>CONTENT</option>
+            <option>DESIGN</option><option>PRODUCTION</option><option>EDIT VIDEO</option><option>CÔNG VIỆC PHÁT SINH</option>
+          </select>
+        </div>
+        <div><div class="flabel">Tên công việc *</div><input type="text" id="a-task" placeholder="VD: Post 9, Kịch bản 10..."></div>
+      </div>
+      <div class="form-grid">
+        <div><div class="flabel">Người phụ trách</div>
+          <select id="a-person">
+            <option>MR TÀI</option><option>MS DIỆP</option><option>MR HUY</option>
+            <option>MR HẢI ANH</option><option>MR TUYÊN</option><option>MS NHI</option><option>MR HƯNG</option><option>MR SƠN</option>
+          </select>
+        </div>
+        <div><div class="flabel">Internal deadline</div><input type="date" id="a-deadline"></div>
+        <div><div class="flabel">Ưu tiên</div>
+          <select id="a-priority">
+            <option>P1 - ƯU TIÊN</option><option>P2 - QUAN TRỌNG</option><option selected>P3 - BÌNH THƯỜNG</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px"><div class="flabel">Ghi chú / Chi tiết</div><textarea id="a-note" placeholder="Mô tả chi tiết..."></textarea></div>
+      <button class="btn-submit" id="a-btn" onclick="addTask()">Thêm vào Google Sheets</button>
+      <div class="toast" id="a-toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SPREADSHEET_ID = '1AoQ8t7MzLjQDIU8V_-e2PnWSms9NklxjVzQy0ngb5wo';
+const SERVICE_ACCOUNT_KEY = {
+  "type": "service_account",
+  "project_id": "nams-projects",
+  "private_key_id": "f2a36cc42703786b54250a1fae06457068615054",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCiXeS3hqQBNYl6\nW6CeL4fQZxCPpqivlAMSFW2HpWXlfd1k4bhvl9MqlCWQ6xqS1PTvcMtN1UNXeMYI\nfgKgVfL4gJHxOPZy8Q589GIyvtekTNIlaJ3bkPGbmLOtjMmqIMXyNsmSNVIITzNN\nu2QoZZfTBttkV4TOONtvaSp93V/9YZAseMGgN5pC3i9CgoJ7mt5gwVMV1HvN5O2K\nPZ+Ezq2BirKVcY+W7NjRazgOIp+L4uV0brNnpWf+OJ3xgF2oeH3ooCP28L7sCxfw\nGYlcUv+ZcE5872EWkz3N+ctosBJbmaUuZDNmn0v2UW073sZBm7nKebS4cTToyR5i\n7OM441ntAgMBAAECggEAFVk1HnBklggdCGqNxt7HA77ZbZnjKhrTAIiyuxgjOrZ+\n6qnHH10eFcYe3lwbRV0cy3LQOG6nCRRHLYyr+brzVHtLNSVhOiG53vIfCz8OiXrU\nUrjbsKfxLJ06WsJdLbJbdIqBnGjIXXFUdI8ED0+0U7neFOZw/tB5AcAZJy15Vo5M\nzPIqFFTHnc3s8+5NlO7Ynj0mJErNr+L624zgg6fiSNDkiHrlXp1FZdVw7mDmXbHF\nE3q49RjpzxPJmSqMrkZyKGm+0iHu49FgKTih6Uk0fKxtsAqHXuTlnv1FxRVdm2N2\n9NeG0Q3zytE/dqCVWf8JoSRZWk0155SvvTtQvKoN4QKBgQDRx5rgaLE98hEbMrks\noSV+8mC+20yb8/IHI582wclkQ8RTkeAJmbM07wKi+R/dw5+4KPByRx42yIhSXGei\nXFkKQ9WJktk+6H0FihaZo4srBpJ8J11jK0DrmH5SPtUJI+OGhTaLkSxFjSCZODpj\nUdJXnvQlEPn2pMHILwee81efGQKBgQDGJAN9f+3eCUau7/2T6GiruHpLoxtolH/v\nU9IwiX4klvSHMuG2MPVtuOkFJhGPOueArgsAVnQIa4DM9xnsra65WDSJlFiXV7Y9\nGhUGa/NNC9AssbhknBSZz2+gbYctcJn5sbC9l8+DSJHCZpIdwe8+VgF9wAxBijZ5\nlpYYCTav9QKBgQDDHpJ6mkYJZQbuMk60KSr0GcNMojNudwcuBr8HMlX8sV+Bj5Q/\nubtKx+i+51LxdQwxQbrrwCRlNj49xP8LsDONbazHalQwxBPNPDRrMQe3vEQxwHeH\nTuryd4M/QnvqJXxyWaNzS1NPWcXxXbBJQwiPQSS6+UBWXcZ0SPIgsRxVuQKBgQCn\n0dDy9uutaAXqHXKVV/9vkmxiq9+HEF/bgQ9B9PJWY1TxPfNWsNju+fLDXZ75xVZW\n8xJ2UsMsboFFGPVoNSML8N1uuarfZHcCAZlVOxFzbFIByPT4ogoAzGUraBlaL0j6\n57lem7oy48Aw+1c+xQexsH7K12KKEFpbWWP/L66WEQKBgG9jCuPxnkWmk383CQIY\n/D/4+5OILhQBYJSNgfsewf9BQfR+ZYIKu6h2OovD0O/Ydvm3uIzAlHP6seQ52VlW\nxqSgkhwhwvpcyZkH05bIu6jc4MZ0Ma4lbdCSi3bdc+i9ZfIZCyM7SP4/MvrP9F/b\n2+y+z5ZtFOy7cjT6xOL8tPoe\n-----END PRIVATE KEY-----\n",
+  "client_email": "nams-account@nams-projects.iam.gserviceaccount.com",
+  "client_id": "102344485737656864466",
+  "token_uri": "https://oauth2.googleapis.com/token"
+};
+
+let accessToken = null;
+let tokenExpiry = 0;
+let allRows = [];
+let sheetNames = [];
+let activeProj = 'ALL';
+
+const COLS = ['Dự Án','Nhóm Công Việc','Công Việc','Người Làm','Internal Deadline','Ưu Tiên','Trạng Thái','Ghi Chú'];
+
+async function getAccessToken() {
+  if (accessToken && Date.now() < tokenExpiry - 60000) return accessToken;
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claim = {
+    iss: SERVICE_ACCOUNT_KEY.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: SERVICE_ACCOUNT_KEY.token_uri,
+    exp: now + 3600,
+    iat: now
+  };
+  const b64 = s => btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const unsigned = b64(header) + '.' + b64(claim);
+  const key = await importPrivateKey(SERVICE_ACCOUNT_KEY.private_key);
+  const sig = await window.crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(unsigned));
+  const jwt = unsigned + '.' + btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const res = await fetch(SERVICE_ACCOUNT_KEY.token_uri, {
+    method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error_description || data.error);
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + data.expires_in * 1000;
+  return accessToken;
+}
+
+async function importPrivateKey(pem) {
+  const pemContent = pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
+  const binaryDer = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
+  return await window.crypto.subtle.importKey(
+    'pkcs8', binaryDer.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+}
+
+async function apiGet(range) {
+  const token = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  return await res.json();
+}
+
+async function apiAppend(sheetName, values) {
+  const token = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const res = await fetch(url, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  return await res.json();
+}
+
+async function apiUpdate(range, values) {
+  const token = await getAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const res = await fetch(url, {
+    method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  return await res.json();
+}
+
+async function getSheetNames() {
+  const token = await getAccessToken();
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}`, {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  const d = await res.json();
+  return (d.sheets || []).map(s => s.properties.title);
+}
+
+async function loadAllSheets() {
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true; btn.textContent = 'Đang sync...';
+  document.getElementById('sync-info').textContent = 'Đang kết nối...';
+  document.getElementById('task-table').innerHTML = '<tr><td colspan="8" class="loading-row"><span class="spinner"></span>Đang tải từ Google Sheets...</td></tr>';
+  try {
+    sheetNames = await getSheetNames();
+    allRows = [];
+    for (const name of sheetNames) {
+      const d = await apiGet(`${name}!A3:H500`);
+      if (d.values) {
+        d.values.forEach(row => {
+          if (row.some(c => c && c.toString().trim())) {
+            allRows.push({ sheet: name, data: row });
+          }
+        });
+      }
+    }
+    updateMetrics();
+    renderFilter();
+    renderTable();
+    populateSheetSelects();
+    const now = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sync-info').textContent = `Sync lúc ${now} · ${allRows.length} tasks`;
+  } catch(e) {
+    document.getElementById('task-table').innerHTML = `<tr><td colspan="8" class="loading-row" style="color:#A32D2D">Lỗi: ${e.message}</td></tr>`;
+    document.getElementById('sync-info').textContent = 'Lỗi: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sync dữ liệu';
+  }
+}
+
+function populateSheetSelects() {
+  const projectSheets = sheetNames.filter(n => n !== 'TỔNG HỢP THÁNG 4');
+  ['u-sheet','a-sheet'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">-- Chọn dự án --</option>' +
+      projectSheets.map(n => `<option value="${n}">${n}</option>`).join('');
+  });
+}
+
+function statusBadge(s) {
+  if (!s) return '<span class="badge b-new">Mới</span>';
+  if (s.toLowerCase().includes('hoàn thành')) return `<span class="badge b-done">${s}</span>`;
+  if (s.includes('AIR')) return `<span class="badge b-air">${s}</span>`;
+  if (s.includes('đợi') || s.includes('duyệt') || s.includes('Duyệt')) return `<span class="badge b-wait">${s}</span>`;
+  if (s.includes('thực hiện')) return `<span class="badge b-doing">${s}</span>`;
+  return `<span class="badge b-new">${s}</span>`;
+}
+
+function updateMetrics() {
+  const projs = new Set(sheetNames.filter(n => n !== 'TỔNG HỢP THÁNG 4'));
+  document.getElementById('m-total').textContent = projs.size;
+  const warn = allRows.filter(r => { const s = r.data[6]||''; return s.includes('đợi')||s.includes('thực hiện'); }).length;
+  const done = allRows.filter(r => (r.data[6]||'').toLowerCase().includes('hoàn thành')).length;
+  document.getElementById('m-warn').textContent = warn;
+  document.getElementById('m-done').textContent = done;
+  document.getElementById('m-tasks').textContent = allRows.length;
+}
+
+function renderFilter() {
+  const projs = ['ALL', ...new Set(allRows.map(r => r.sheet))];
+  document.getElementById('proj-filter').innerHTML = projs.map(p =>
+    `<button class="filter-btn ${p===activeProj?'active':''}" onclick="filterProj('${p}')">${p==='ALL'?'Tất cả':p}</button>`
+  ).join('');
+}
+
+function filterProj(p) {
+  activeProj = p; renderFilter(); renderTable();
+}
+
+function renderTable() {
+  const filtered = activeProj === 'ALL' ? allRows : allRows.filter(r => r.sheet === activeProj);
+  if (!filtered.length) {
+    document.getElementById('task-table').innerHTML = '<tr><td colspan="8" class="loading-row">Không có dữ liệu</td></tr>';
+    return;
+  }
+  document.getElementById('task-table').innerHTML = filtered.map(r => {
+    const d = r.data;
+    const pri = d[5]||'';
+    const priClass = pri.includes('P1') ? 'p1' : pri.includes('P2') ? 'p2' : 'p3';
+    return `<tr>
+      <td><span class="proj-tag">${r.sheet}</span></td>
+      <td style="color:#666">${d[1]||'—'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d[2]||''}">${d[2]||'—'}</td>
+      <td style="white-space:nowrap">${d[3]||'—'}</td>
+      <td style="white-space:nowrap">${d[4]||'—'}</td>
+      <td class="${priClass}">${pri||'—'}</td>
+      <td>${statusBadge(d[6])}</td>
+      <td style="color:#888;font-size:12px">${d[7]||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['dashboard','update','add'][i]===name));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function showToast(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.className = 'toast '+(ok?'toast-ok':'toast-err');
+  el.textContent = msg; el.style.display = 'block';
+  if (ok) setTimeout(()=>el.style.display='none', 5000);
+}
+
+async function updateTask() {
+  const sheet = document.getElementById('u-sheet').value;
+  const group = document.getElementById('u-group').value;
+  const task = document.getElementById('u-task').value.trim();
+  const status = document.getElementById('u-status').value;
+  const date = document.getElementById('u-date').value;
+  const person = document.getElementById('u-person').value;
+  const note = document.getElementById('u-note').value.trim();
+  if (!sheet) return showToast('u-toast','Vui lòng chọn dự án',false);
+  if (!task) return showToast('u-toast','Vui lòng nhập tên công việc',false);
+  const btn = document.getElementById('u-btn');
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
+  try {
+    const d = await apiGet(`${sheet}!A3:H500`);
+    const rows = d.values || [];
+    const idx = rows.findIndex(r => (r[2]||'').toLowerCase().includes(task.toLowerCase()));
+    if (idx >= 0) {
+      const rowNum = idx + 3;
+      const existing = rows[idx];
+      await apiUpdate(`${sheet}!G${rowNum}:H${rowNum}`, [[status, note || existing[7]||'']]);
+      if (date) await apiUpdate(`${sheet}!E${rowNum}`, [[date]]);
+      showToast('u-toast', `Đã cập nhật: [${sheet}] ${task} → ${status}`, true);
+    } else {
+      await apiAppend(sheet, [[sheet, group, task, person, date||'', 'P2 - QUAN TRỌNG', status, note]]);
+      showToast('u-toast', `Đã thêm mới: [${sheet}] ${task} → ${status}`, true);
+    }
+    document.getElementById('u-task').value = '';
+    document.getElementById('u-note').value = '';
+    document.getElementById('u-date').value = '';
+    await loadAllSheets();
+  } catch(e) {
+    showToast('u-toast','Lỗi: '+e.message,false);
+  } finally {
+    btn.disabled=false; btn.textContent='Lưu vào Google Sheets';
+  }
+}
+
+async function addTask() {
+  const sheet = document.getElementById('a-sheet').value;
+  const group = document.getElementById('a-group').value;
+  const task = document.getElementById('a-task').value.trim();
+  const person = document.getElementById('a-person').value;
+  const deadline = document.getElementById('a-deadline').value;
+  const priority = document.getElementById('a-priority').value;
+  const note = document.getElementById('a-note').value.trim();
+  if (!sheet) return showToast('a-toast','Vui lòng chọn dự án',false);
+  if (!task) return showToast('a-toast','Vui lòng nhập tên công việc',false);
+  const btn = document.getElementById('a-btn');
+  btn.disabled=true; btn.textContent='Đang thêm...';
+  try {
+    await apiAppend(sheet, [[sheet, group, task, person, deadline||'', priority, 'Mới', note]]);
+    showToast('a-toast', `Đã thêm: [${sheet}] ${group} - ${task}`, true);
+    document.getElementById('a-task').value='';
+    document.getElementById('a-note').value='';
+    document.getElementById('a-deadline').value='';
+    await loadAllSheets();
+  } catch(e) {
+    showToast('a-toast','Lỗi: '+e.message,false);
+  } finally {
+    btn.disabled=false; btn.textContent='Thêm vào Google Sheets';
+  }
+}
+
+loadAllSheets();
+</script>
+</body>
+</html>
