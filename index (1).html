@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nam's Projects — Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; font-size: 14px; }
+header { background: #fff; border-bottom: 1px solid #e5e5e0; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 16px; font-weight: 600; }
+.logo span { color: #1D9E75; }
+.sync-btn { background: #1D9E75; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 500; }
+.sync-btn:hover { background: #0F6E56; }
+.sync-btn:disabled { background: #9FE1CB; cursor: not-allowed; }
+.sync-info { font-size: 12px; color: #888; margin-right: 8px; }
+.main { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.metric { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e5e5e0; }
+.metric-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+.metric-value { font-size: 28px; font-weight: 600; }
+.metric-sub { font-size: 11px; color: #aaa; margin-top: 3px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; background: #fff; border-radius: 10px; padding: 6px; border: 1px solid #e5e5e0; width: fit-content; }
+.tab { padding: 8px 18px; border-radius: 7px; border: none; background: none; font-size: 13px; color: #666; cursor: pointer; font-weight: 500; transition: all .15s; }
+.tab.active { background: #1D9E75; color: #fff; }
+.tab:hover:not(.active) { background: #f0f0ec; }
+.section { display: none; }
+.section.active { display: block; }
+.card { background: #fff; border-radius: 10px; border: 1px solid #e5e5e0; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-btn { padding: 5px 12px; border-radius: 999px; border: 1px solid #e5e5e0; background: #fff; font-size: 12px; cursor: pointer; color: #555; }
+.filter-btn.active { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e5e0; font-size: 12px; font-weight: 600; color: #888; white-space: nowrap; }
+td { padding: 6px 12px; border-bottom: 1px solid #f0f0ec; font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+.b-done { background: #EAF3DE; color: #3B6D11; }
+.b-wait { background: #FAEEDA; color: #854F0B; }
+.b-doing { background: #FBEAF0; color: #993556; }
+.b-new { background: #E6F1FB; color: #185FA5; }
+.b-air { background: #EEEDFE; color: #3C3489; }
+.inline-sel { padding: 4px 8px; border: 1px solid #e5e5e0; border-radius: 6px; font-size: 12px; color: #1a1a1a; background: #fff; cursor: pointer; max-width: 148px; }
+.inline-sel:focus { border-color: #1D9E75; outline: none; }
+.save-row-btn { padding: 4px 10px; background: #1D9E75; color: #fff; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600; }
+.save-row-btn:hover { background: #0F6E56; }
+.save-row-btn:disabled { background: #9FE1CB; }
+.form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+.flabel { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e5e5e0; border-radius: 8px; font-size: 13px; color: #1a1a1a; background: #fff; outline: none; font-family: inherit; }
+input:focus, select:focus, textarea:focus { border-color: #1D9E75; box-shadow: 0 0 0 3px rgba(29,158,117,.1); }
+textarea { height: 72px; resize: vertical; }
+.btn-submit { background: #1D9E75; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.btn-submit:hover { background: #0F6E56; }
+.btn-submit:disabled { background: #9FE1CB; cursor: not-allowed; }
+.toast { font-size: 12px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; display: none; font-weight: 500; }
+.toast-ok { background: #EAF3DE; color: #3B6D11; border: 1px solid #C0DD97; }
+.toast-err { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+.loading-row { text-align: center; padding: 40px; color: #aaa; font-size: 13px; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #e5e5e0; border-top-color: #1D9E75; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.proj-tag { font-size: 11px; padding: 2px 8px; border-radius: 5px; background: #f0f0ec; color: #555; font-weight: 500; }
+.p1 { color: #A32D2D; font-weight: 600; }
+.p2 { color: #854F0B; }
+.p3 { color: #888; }
+.gantt-row { display: grid; grid-template-columns: 190px 1fr 90px; align-items: center; padding: 5px 0; border-bottom: 1px solid #f5f5f2; }
+.gantt-row:hover { background: #fafaf8; }
+.gantt-label { font-size: 12px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; }
+.gantt-bar-track { position: relative; height: 24px; background: #f0f0ec; border-radius: 4px; overflow: visible; }
+.gantt-bar { position: absolute; height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; min-width: 4px; }
+.gantt-today-line { position: absolute; width: 2px; background: #E24B4A; top: -4px; bottom: -4px; z-index: 10; }
+.gantt-month-divider { position: absolute; width: 1px; background: #ddd; top: -4px; bottom: -4px; }
+.gantt-month-label { position: absolute; top: -18px; font-size: 10px; color: #999; transform: translateX(-50%); white-space: nowrap; }
+.gantt-status { font-size: 11px; color: #555; padding-left: 10px; white-space: nowrap; }
+@media (max-width: 768px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .gantt-row { grid-template-columns: 120px 1fr 70px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Nam's <span>Projects</span> <span style="font-size:11px;color:#aaa;font-weight:400">· Google Sheets</span></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="sync-info" id="sync-info">Chưa sync</span>
+    <button class="sync-btn" id="sync-btn" onclick="loadAllSheets()">Sync dữ liệu</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Tổng dự án</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">đang ONGOING</div></div>
+    <div class="metric"><div class="metric-label">Cần xử lý</div><div class="metric-value" id="m-warn" style="color:#BA7517">—</div><div class="metric-sub">đang đợi / đang làm</div></div>
+    <div class="metric"><div class="metric-label">Hoàn thành</div><div class="metric-value" id="m-done" style="color:#1D9E75">—</div><div class="metric-sub">tasks đã xong</div></div>
+    <div class="metric"><div class="metric-label">Tổng tasks</div><div class="metric-value" id="m-tasks">—</div><div class="metric-sub">trong tất cả dự án</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="switchTab('gantt')">Gantt Chart</button>
+    <button class="tab" onclick="switchTab('update')">Cập nhật tiến độ</button>
+    <button class="tab" onclick="switchTab('add')">Thêm task mới</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="section active">
+    <div class="card" style="padding:16px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin:0">Lọc theo dự án</div>
+        <span style="font-size:11px;color:#aaa">Chỉnh người làm / trạng thái ngay trên bảng → nhấn Lưu</span>
+      </div>
+      <div class="filter-row" id="proj-filter"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Danh sách công việc</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Dự án</th><th>Nhóm</th><th>Công việc</th>
+            <th>Người làm</th><th>Deadline</th><th>Ưu tiên</th>
+            <th>Trạng thái</th><th></th>
+          </tr></thead>
+          <tbody id="task-table"><tr><td colspan="8" class="loading-row">Nhấn "Sync dữ liệu" để tải từ Google Sheets</td></tr></tbody>
+        </table>
+      </div>
+      <div class="toast" id="dash-toast"></div>
+    </div>
+  </div>
+
+  <!-- GANTT -->
+  <div id="tab-gantt" class="section">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="card-title" style="margin:0">Gantt Chart — Tiến độ theo tháng</div>
+        <div style="display:flex;gap:16px;font-size:11px;color:#888;align-items:center">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#E24B4A;display:inline-block;border-radius:2px"></span>Hôm nay</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ddd;display:inline-block;border-radius:2px"></span>Ranh giới tháng</span>
+        </div>
+      </div>
+      <div class="filter-row" id="gantt-filter" style="margin-bottom:20px"></div>
+      <div style="overflow-x:auto">
+        <div id="gantt-container" style="min-width:700px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPDATE -->
+  <div id="tab-update" class="section">
+    <div class="card">
+      <div class="card-title">Cập nhật tiến độ công việc</div>
+      <div class="form-grid">
+        <div><div class="flabel">Dự án *</div>
+          <select id="u-sheet" onchange="updateTaskDropdown()"><option value="">-- Chọn dự án --</option></select>
+        </div>
+        <div><div class="flabel">Nhóm công việc</div>
+          <select id="u-group" onchange="updateTaskDropdown()">
+            <option value="">Tất cả nhóm</option>
+            <option>PLAN</option><option>KỊCH BẢN</option><option>CONTENT</option>
+            <option>DESIGN</option><option>PRODUCTION</option><option>EDIT VIDEO</option>
+          </select>
+        </div>
+        <div><div class="flabel">Tên công việc *</div>
+          <select id="u-task"><option value="">-- Chọn công việc --</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><div class="flabel">Trạng thái mới *</div>
+          <select id="u-status">
+            <option>Hoàn thành</option><option>Đang thực hiện</option><option>Đang đợi duyệt</option>
+            <option>Khách đã duyệt</option><option>Đã gửi khách</option><option>Mới</option><option>Đã AIR</option>
+          </select>
+        </div>
+        <div><div class="flabel">Người phụ trách</div>
+          <select id="u-person">
+            <option>MR TÀI</option><option>MS DIỆP</option><option>MR HUY</option>
+            <option>MR HẢI ANH</option><option>MR TUYÊN</option><option>MS NHI</option><option>MR HƯNG</option><option>MR SƠN</option>
+          </select>
+        </div>
+        <div><div class="flabel">Ngày duyệt</div><input type="date" id="u-date"></div>
+      </div>
+      <div style="margin-bottom:16px"><div class="flabel">Ghi chú</div><textarea id="u-note" placeholder="Ghi chú thêm..."></textarea></div>
+      <button class="btn-submit" id="u-btn" onclick="updateTask()">Lưu vào Google Sheets</button>
+      <div class="toast" id="u-toast"></div>
+    </div>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="section">
+    <div class="card">
+      <div class="card-title">Thêm task mới</div>
+      <div class="form-grid">
+        <div><div class="flabel">Dự án *</div>
+          <select id="a-sheet"><option value="">-- Chọn dự án --</option></select>
+        </div>
+        <div><div class="flabel">Nhóm công việc</div>
+          <select id="a-group">
+            <option>PLAN</option><option>KỊCH BẢN</option><option>CONTENT</option>
+            <option>DESIGN</option><option>PRODUCTION</option><option>EDIT VIDEO</option><option>CÔNG VIỆC PHÁT SINH</option>
+          </select>
+        </div>
+        <div><div class="flabel">Tên công việc *</div><input type="text" id="a-task" placeholder="VD: Post 9..."></div>
+      </div>
+      <div class="form-grid">
+        <div><div class="flabel">Người phụ trách</div>
+          <select id="a-person">
+            <option>MR TÀI</option><option>MS DIỆP</option><option>MR HUY</option>
+            <option>MR HẢI ANH</option><option>MR TUYÊN</option><option>MS NHI</option><option>MR HƯNG</option><option>MR SƠN</option>
+          </select>
+        </div>
+        <div><div class="flabel">Internal deadline</div><input type="date" id="a-deadline"></div>
+        <div><div class="flabel">Ưu tiên</div>
+          <select id="a-priority">
+            <option>P1 - ƯU TIÊN</option><option>P2 - QUAN TRỌNG</option><option selected>P3 - BÌNH THƯỜNG</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px"><div class="flabel">Ghi chú</div><textarea id="a-note" placeholder="Mô tả chi tiết..."></textarea></div>
+      <button class="btn-submit" id="a-btn" onclick="addTask()">Thêm vào Google Sheets</button>
+      <div class="toast" id="a-toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SPREADSHEET_ID = '1AoQ8t7MzLjQDIU8V_-e2PnWSms9NklxjVzQy0ngb5wo';
+const SA = {
+  email: 'nams-account@nams-projects.iam.gserviceaccount.com',
+  key: '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCiXeS3hqQBNYl6\nW6CeL4fQZxCPpqivlAMSFW2HpWXlfd1k4bhvl9MqlCWQ6xqS1PTvcMtN1UNXeMYI\nfgKgVfL4gJHxOPZy8Q589GIyvtekTNIlaJ3bkPGbmLOtjMmqIMXyNsmSNVIITzNN\nu2QoZZfTBttkV4TOONtvaSp93V/9YZAseMGgN5pC3i9CgoJ7mt5gwVMV1HvN5O2K\nPZ+Ezq2BirKVcY+W7NjRazgOIp+L4uV0brNnpWf+OJ3xgF2oeH3ooCP28L7sCxfw\nGYlcUv+ZcE5872EWkz3N+ctosBJbmaUuZDNmn0v2UW073sZBm7nKebS4cTToyR5i\n7OM441ntAgMBAAECggEAFVk1HnBklggdCGqNxt7HA77ZbZnjKhrTAIiyuxgjOrZ+\n6qnHH10eFcYe3lwbRV0cy3LQOG6nCRRHLYyr+brzVHtLNSVhOiG53vIfCz8OiXrU\nUrjbsKfxLJ06WsJdLbJbdIqBnGjIXXFUdI8ED0+0U7neFOZw/tB5AcAZJy15Vo5M\nzPIqFFTHnc3s8+5NlO7Ynj0mJErNr+L624zgg6fiSNDkiHrlXp1FZdVw7mDmXbHF\nE3q49RjpzxPJmSqMrkZyKGm+0iHu49FgKTih6Uk0fKxtsAqHXuTlnv1FxRVdm2N2\n9NeG0Q3zytE/dqCVWf8JoSRZWk0155SvvTtQvKoN4QKBgQDRx5rgaLE98hEbMrks\noSV+8mC+20yb8/IHI582wclkQ8RTkeAJmbM07wKi+R/dw5+4KPByRx42yIhSXGei\nXFkKQ9WJktk+6H0FihaZo4srBpJ8J11jK0DrmH5SPtUJI+OGhTaLkSxFjSCZODpj\nUdJXnvQlEPn2pMHILwee81efGQKBgQDGJAN9f+3eCUau7/2T6GiruHpLoxtolH/v\nU9IwiX4klvSHMuG2MPVtuOkFJhGPOueArgsAVnQIa4DM9xnsra65WDSJlFiXV7Y9\nGhUGa/NNC9AssbhknBSZz2+gbYctcJn5sbC9l8+DSJHCZpIdwe8+VgF9wAxBijZ5\nlpYYCTav9QKBgQDDHpJ6mkYJZQbuMk60KSr0GcNMojNudwcuBr8HMlX8sV+Bj5Q/\nubtKx+i+51LxdQwxQbrrwCRlNj49xP8LsDONbazHalQwxBPNPDRrMQe3vEQxwHeH\nTuryd4M/QnvqJXxyWaNzS1NPWcXxXbBJQwiPQSS6+UBWXcZ0SPIgsRxVuQKBgQCn\n0dDy9uutaAXqHXKVV/9vkmxiq9+HEF/bgQ9B9PJWY1TxPfNWsNju+fLDXZ75xVZW\n8xJ2UsMsboFFGPVoNSML8N1uuarfZHcCAZlVOxFzbFIByPT4ogoAzGUraBlaL0j6\n57lem7oy48Aw+1c+xQexsH7K12KKEFpbWWP/L66WEQKBgG9jCuPxnkWmk383CQIY\n/D/4+5OILhQBYJSNgfsewf9BQfR+ZYIKu6h2OovD0O/Ydvm3uIzAlHP6seQ52VlW\nxqSgkhwhwvpcyZkH05bIu6jc4MZ0Ma4lbdCSi3bdc+i9ZfIZCyM7SP4/MvrP9F/b\n2+y+z5ZtFOy7cjT6xOL8tPoe\n-----END PRIVATE KEY-----\n',
+  uri: 'https://oauth2.googleapis.com/token'
+};
+
+const PERSONS = ['MR TÀI','MS DIỆP','MR HUY','MR HẢI ANH','MR TUYÊN','MS NHI','MR HƯNG','MR SƠN'];
+const STATUSES = ['Mới','Đang thực hiện','Đang đợi duyệt','Khách đã duyệt','Đã gửi khách','Hoàn thành','Đã AIR'];
+const SOW = {
+  'NHÀ VUI':        {s:[2026,4,1],  plan:22,post1:28,post2:5,  hasVideo:true},
+  'CICILIA DANANG': {s:[2026,4,1],  plan:17,post1:22,post2:28, hasVideo:true},
+  'NOOK':           {s:[2026,4,1],  plan:20,post1:27,post2:5,  hasVideo:true},
+  'NÓN HUẾ':       {s:[2026,4,1],  plan:20,post1:27,post2:5,  hasVideo:false},
+  'MANDILA':        {s:[2026,4,15], plan:12,post1:20,post2:28, hasVideo:true},
+  'AVATAR':         {s:[2026,4,15], plan:3, post1:8, post2:12, hasVideo:true},
+  'HOSHIGAMI':      {s:[2026,4,1],  plan:15,post1:22,post2:29, hasVideo:false},
+};
+
+let tok=null, tokExp=0, allRows=[], sheetNames=[], activeProj='ALL', activeGantt='';
+
+async function getToken() {
+  if (tok && Date.now()<tokExp-60000) return tok;
+  const now=Math.floor(Date.now()/1000);
+  const b64=s=>btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const u=b64({alg:'RS256',typ:'JWT'})+'.'+b64({iss:SA.email,scope:'https://www.googleapis.com/auth/spreadsheets',aud:SA.uri,exp:now+3600,iat:now});
+  const pem=SA.key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g,'');
+  const k=await crypto.subtle.importKey('pkcs8',Uint8Array.from(atob(pem),c=>c.charCodeAt(0)).buffer,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
+  const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',k,new TextEncoder().encode(u));
+  const jwt=u+'.'+btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const r=await fetch(SA.uri,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`});
+  const d=await r.json(); if(d.error) throw new Error(d.error_description||d.error);
+  tok=d.access_token; tokExp=Date.now()+d.expires_in*1000; return tok;
+}
+const ah=async()=>({Authorization:'Bearer '+(await getToken()),'Content-Type':'application/json'});
+async function apiGet(range){const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`,{headers:await ah()});return r.json();}
+async function apiPut(range,values){const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,{method:'PUT',headers:await ah(),body:JSON.stringify({values})});return r.json();}
+async function apiPost(sheet,values){const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheet)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,{method:'POST',headers:await ah(),body:JSON.stringify({values})});return r.json();}
+async function getSheets(){const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}`,{headers:await ah()});const d=await r.json();return(d.sheets||[]).map(s=>s.properties.title);}
+
+async function loadAllSheets(){
+  const btn=document.getElementById('sync-btn');
+  btn.disabled=true;btn.textContent='Đang sync...';
+  document.getElementById('sync-info').textContent='Đang kết nối...';
+  document.getElementById('task-table').innerHTML='<tr><td colspan="8" class="loading-row"><span class="spinner"></span>Đang tải...</td></tr>';
+  try {
+    sheetNames=await getSheets(); allRows=[];
+    for(const name of sheetNames){
+      const d=await apiGet(`${name}!A3:H500`);
+      if(d.values) d.values.forEach((row,i)=>{if(row.some(c=>c&&c.toString().trim())) allRows.push({sheet:name,rowNum:i+3,data:row});});
+    }
+    updateMetrics();renderFilter();renderTable();populateSelects();
+    const projs=sheetNames.filter(n=>n!=='TỔNG HỢP THÁNG 4');
+    activeGantt=projs[0]||'';renderGanttFilter();renderGantt();
+    const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} tasks`;
+  } catch(e){
+    document.getElementById('task-table').innerHTML=`<tr><td colspan="8" class="loading-row" style="color:#A32D2D">Lỗi: ${e.message}</td></tr>`;
+    document.getElementById('sync-info').textContent='Lỗi: '+e.message;
+  } finally{btn.disabled=false;btn.textContent='Sync dữ liệu';}
+}
+
+function updateMetrics(){
+  document.getElementById('m-total').textContent=new Set(sheetNames.filter(n=>n!=='TỔNG HỢP THÁNG 4')).size;
+  document.getElementById('m-warn').textContent=allRows.filter(r=>{const s=r.data[6]||'';return s.includes('đợi')||s.includes('thực hiện');}).length;
+  document.getElementById('m-done').textContent=allRows.filter(r=>(r.data[6]||'').toLowerCase().includes('hoàn thành')).length;
+  document.getElementById('m-tasks').textContent=allRows.length;
+}
+
+function populateSelects(){
+  const projs=sheetNames.filter(n=>n!=='TỔNG HỢP THÁNG 4');
+  ['u-sheet','a-sheet'].forEach(id=>{document.getElementById(id).innerHTML='<option value="">-- Chọn dự án --</option>'+projs.map(n=>`<option>${n}</option>`).join('');});
+}
+
+function updateTaskDropdown(){
+  const sheet=document.getElementById('u-sheet').value,group=document.getElementById('u-group').value,sel=document.getElementById('u-task');
+  sel.innerHTML='<option value="">-- Chọn công việc --</option>';
+  if(!sheet) return;
+  const u=[...new Set(allRows.filter(r=>r.sheet===sheet&&(!group||(r.data[1]||'')===group)).map(r=>r.data[2]).filter(Boolean))];
+  sel.innerHTML='<option value="">-- Chọn công việc --</option>'+u.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+function sBadge(s){
+  if(!s) return '<span class="badge b-new">Mới</span>';
+  if(s.toLowerCase().includes('hoàn thành')) return `<span class="badge b-done">${s}</span>`;
+  if(s.includes('AIR')) return `<span class="badge b-air">${s}</span>`;
+  if(s.includes('đợi')||s.toLowerCase().includes('duyệt')) return `<span class="badge b-wait">${s}</span>`;
+  if(s.includes('thực hiện')) return `<span class="badge b-doing">${s}</span>`;
+  return `<span class="badge b-new">${s}</span>`;
+}
+
+function renderFilter(){
+  const projs=['ALL',...new Set(allRows.map(r=>r.sheet))];
+  document.getElementById('proj-filter').innerHTML=projs.map(p=>`<button class="filter-btn ${p===activeProj?'active':''}" onclick="filterProj('${p}')">${p==='ALL'?'Tất cả':p}</button>`).join('');
+}
+function filterProj(p){activeProj=p;renderFilter();renderTable();}
+
+function renderTable(){
+  const filtered=activeProj==='ALL'?allRows:allRows.filter(r=>r.sheet===activeProj);
+  if(!filtered.length){document.getElementById('task-table').innerHTML='<tr><td colspan="8" class="loading-row">Không có dữ liệu</td></tr>';return;}
+  document.getElementById('task-table').innerHTML=filtered.map((r,i)=>{
+    const d=r.data,pri=d[5]||'',priClass=pri.includes('P1')?'p1':pri.includes('P2')?'p2':'p3';
+    const pOpts=PERSONS.map(p=>`<option ${(d[3]||'')==p?'selected':''}>${p}</option>`).join('');
+    const sOpts=STATUSES.map(s=>`<option ${(d[6]||'')==s?'selected':''}>${s}</option>`).join('');
+    return `<tr id="drow-${i}">
+      <td><span class="proj-tag">${r.sheet}</span></td>
+      <td style="color:#666;font-size:12px">${d[1]||'—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d[2]||''}">${d[2]||'—'}</td>
+      <td><select class="inline-sel" id="dp-${i}">${pOpts}</select></td>
+      <td style="white-space:nowrap;font-size:12px;color:#666">${d[4]||'—'}</td>
+      <td class="${priClass}" style="font-size:12px">${pri||'—'}</td>
+      <td><select class="inline-sel" id="ds-${i}">${sOpts}</select></td>
+      <td><button class="save-row-btn" onclick="saveRow(${i})">Lưu</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function saveRow(i){
+  const filtered=activeProj==='ALL'?allRows:allRows.filter(r=>r.sheet===activeProj);
+  const r=filtered[i];
+  const np=document.getElementById('dp-'+i).value,ns=document.getElementById('ds-'+i).value;
+  const btn=document.querySelector(`#drow-${i} .save-row-btn`);
+  btn.disabled=true;btn.textContent='...';
+  try{
+    await apiPut(`${r.sheet}!D${r.rowNum}`,[[np]]);
+    await apiPut(`${r.sheet}!G${r.rowNum}`,[[ns]]);
+    r.data[3]=np;r.data[6]=ns;
+    updateMetrics();
+    showToast('dash-toast',`Đã lưu: [${r.sheet}] ${r.data[2]||''} → ${ns}`,true);
+  }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
+  finally{btn.disabled=false;btn.textContent='Lưu';}
+}
+
+// ── GANTT ──────────────────────────────────────────────────────────────────────
+function mkDate(y,m,d){return new Date(y,m-1,d);}
+function renderGanttFilter(){
+  const projs=sheetNames.filter(n=>n!=='TỔNG HỢP THÁNG 4');
+  document.getElementById('gantt-filter').innerHTML=projs.map(p=>`<button class="filter-btn ${p===activeGantt?'active':''}" onclick="switchGantt('${p}')">${p}</button>`).join('');
+}
+function switchGantt(p){activeGantt=p;renderGanttFilter();renderGantt();}
+
+function renderGantt(){
+  const el=document.getElementById('gantt-container');
+  const sow=SOW[activeGantt];
+  if(!sow){el.innerHTML='<div style="color:#aaa;padding:20px;text-align:center">Chưa có SOW cho dự án này</div>';return;}
+
+  const gs=mkDate(2026,3,1),ge=mkDate(2026,6,1),totalMs=ge-gs;
+  const pct=dt=>Math.max(0,Math.min(100,(dt-gs)/totalMs*100));
+  const pw=(s,e)=>Math.max(0.8,pct(e)-pct(s));
+  const today=new Date(),todayP=pct(today);
+
+  const [sy,sm,sd]=sow.s;
+  const phases=[];
+
+  const planEnd=mkDate(2026,4,sow.plan);
+  phases.push({label:'Plan content tháng 4',group:'PLAN',s:mkDate(sy,sm,sd),e:planEnd,c:'#185FA5'});
+
+  const c1s=new Date(planEnd);c1s.setDate(c1s.getDate()+1);
+  const c1e=sow.post1<=28?mkDate(2026,4,sow.post1):mkDate(2026,5,sow.post1-28);
+  phases.push({label:'Content đợt 1 (4 posts)',group:'CONTENT',s:c1s,e:c1e,c:'#1D9E75'});
+  phases.push({label:'Design đợt 1 (4 posts)',group:'DESIGN',s:c1s,e:c1e,c:'#854F0B'});
+
+  const c2s=new Date(c1e);c2s.setDate(c2s.getDate()+2);
+  const c2e=sow.post2<=15?mkDate(2026,5,sow.post2):mkDate(2026,4,sow.post2);
+  phases.push({label:'Content đợt 2 (4 posts)',group:'CONTENT',s:c2s,e:c2e,c:'#0F6E56'});
+  phases.push({label:'Design đợt 2 (4 posts)',group:'DESIGN',s:c2s,e:c2e,c:'#633806'});
+
+  if(sow.hasVideo){
+    const ks=new Date(planEnd);ks.setDate(ks.getDate()+1);
+    const ke=new Date(ks);ke.setDate(ke.getDate()+12);
+    phases.push({label:'Kịch bản video',group:'KỊCH BẢN',s:ks,e:ke,c:'#534AB7'});
+    const ps=new Date(ke);ps.setDate(ps.getDate()+1);
+    const pe=new Date(ps);pe.setDate(pe.getDate()+4);
+    phases.push({label:'Chốt ngày quay',group:'PRODUCTION',s:ps,e:pe,c:'#993556'});
+    const es=new Date(pe);es.setDate(es.getDate()+1);
+    const ee=new Date(es);ee.setDate(ee.getDate()+7);
+    phases.push({label:'Edit video',group:'EDIT VIDEO',s:es,e:ee,c:'#3B6D11'});
+  }
+
+  function getPhaseStatus(group){
+    const rows=allRows.filter(r=>r.sheet===activeGantt&&(r.data[1]||'')===group);
+    if(!rows.length) return '<span style="color:#aaa">Chưa có data</span>';
+    const done=rows.filter(r=>(r.data[6]||'').toLowerCase().includes('hoàn thành')).length;
+    const pctDone=Math.round(done/rows.length*100);
+    const color=pctDone===100?'#3B6D11':pctDone>50?'#854F0B':'#185FA5';
+    return `<span style="color:${color};font-weight:600">${done}/${rows.length} (${pctDone}%)</span>`;
+  }
+
+  const months=[{m:3,label:'Tháng 3/2026'},{m:4,label:'Tháng 4/2026'},{m:5,label:'Tháng 5/2026'}];
+  const decorations=months.map(({m,label})=>{
+    const lp=pct(mkDate(2026,m,1));
+    return `<div class="gantt-month-divider" style="left:${lp}%"></div><div class="gantt-month-label" style="left:${lp}%">${label}</div>`;
+  }).join('')+`<div class="gantt-today-line" style="left:${todayP}%"></div>`;
+
+  const header=`<div style="display:grid;grid-template-columns:190px 1fr 90px;padding:20px 0 8px;border-bottom:1px solid #e5e5e0;margin-bottom:4px">
+    <div style="font-size:11px;font-weight:600;color:#888">Giai đoạn</div>
+    <div style="font-size:11px;font-weight:600;color:#888;padding-left:4px">Thời gian (Tháng 3 – Tháng 5/2026)</div>
+    <div style="font-size:11px;font-weight:600;color:#888;padding-left:10px">Tiến độ</div>
+  </div>`;
+
+  const rows=phases.map(p=>{
+    const l=pct(p.s),w=pw(p.s,p.e);
+    const ds=p.s.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
+    const de=p.e.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
+    return `<div class="gantt-row">
+      <div class="gantt-label" title="${p.label}">${p.label}</div>
+      <div class="gantt-bar-track">
+        ${decorations}
+        <div class="gantt-bar" style="left:${l}%;width:${w}%;background:${p.c}" title="${ds} → ${de}">
+          ${w>10?ds:''}
+        </div>
+      </div>
+      <div class="gantt-status">${getPhaseStatus(p.group)}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=header+rows;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['dashboard','gantt','update','add'][i]===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function showToast(id,msg,ok){
+  const el=document.getElementById(id);
+  el.className='toast '+(ok?'toast-ok':'toast-err');
+  el.textContent=msg;el.style.display='block';
+  if(ok) setTimeout(()=>el.style.display='none',5000);
+}
+
+async function updateTask(){
+  const sheet=document.getElementById('u-sheet').value,group=document.getElementById('u-group').value;
+  const task=document.getElementById('u-task').value.trim(),status=document.getElementById('u-status').value;
+  const date=document.getElementById('u-date').value,person=document.getElementById('u-person').value;
+  const note=document.getElementById('u-note').value.trim();
+  if(!sheet) return showToast('u-toast','Vui lòng chọn dự án',false);
+  if(!task) return showToast('u-toast','Vui lòng chọn công việc',false);
+  const btn=document.getElementById('u-btn');btn.disabled=true;btn.textContent='Đang lưu...';
+  try{
+    const d=await apiGet(`${sheet}!A3:H500`);const rows=d.values||[];
+    const idx=rows.findIndex(r=>(r[2]||'').toLowerCase()===task.toLowerCase());
+    if(idx>=0){
+      const rn=idx+3,ex=rows[idx];
+      await apiPut(`${sheet}!D${rn}`,[[person]]);
+      await apiPut(`${sheet}!G${rn}:H${rn}`,[[status,note||ex[7]||'']]);
+      if(date) await apiPut(`${sheet}!E${rn}`,[[date]]);
+      showToast('u-toast',`Đã cập nhật: [${sheet}] ${task} → ${status}`,true);
+    } else {
+      await apiPost(sheet,[[sheet,group,task,person,date||'','P2 - QUAN TRỌNG',status,note]]);
+      showToast('u-toast',`Đã thêm mới: [${sheet}] ${task}`,true);
+    }
+    document.getElementById('u-task').innerHTML='<option value="">-- Chọn công việc --</option>';
+    document.getElementById('u-note').value='';document.getElementById('u-date').value='';
+    await loadAllSheets();
+  }catch(e){showToast('u-toast','Lỗi: '+e.message,false);}
+  finally{btn.disabled=false;btn.textContent='Lưu vào Google Sheets';}
+}
+
+async function addTask(){
+  const sheet=document.getElementById('a-sheet').value,group=document.getElementById('a-group').value;
+  const task=document.getElementById('a-task').value.trim(),person=document.getElementById('a-person').value;
+  const deadline=document.getElementById('a-deadline').value,priority=document.getElementById('a-priority').value;
+  const note=document.getElementById('a-note').value.trim();
+  if(!sheet) return showToast('a-toast','Vui lòng chọn dự án',false);
+  if(!task) return showToast('a-toast','Vui lòng nhập tên công việc',false);
+  const btn=document.getElementById('a-btn');btn.disabled=true;btn.textContent='Đang thêm...';
+  try{
+    await apiPost(sheet,[[sheet,group,task,person,deadline||'',priority,'Mới',note]]);
+    showToast('a-toast',`Đã thêm: [${sheet}] ${group} - ${task}`,true);
+    document.getElementById('a-task').value='';document.getElementById('a-note').value='';document.getElementById('a-deadline').value='';
+    await loadAllSheets();
+  }catch(e){showToast('a-toast','Lỗi: '+e.message,false);}
+  finally{btn.disabled=false;btn.textContent='Thêm vào Google Sheets';}
+}
+
+loadAllSheets();
+</script>
+</body>
+</html>
