@@ -128,7 +128,7 @@
           </select>
         </div>
         <div><div class="flabel">Tên công việc *</div>
-          <input type="text" id="u-task" placeholder="VD: Post 1 - Đợt 1, Kịch bản 3...">
+          <select id="u-task"><option value="">-- Chọn công việc --</option></select>
         </div>
       </div>
       <div class="form-grid">
@@ -321,6 +321,19 @@ function populateSheetSelects() {
     sel.innerHTML = '<option value="">-- Chọn dự án --</option>' +
       projectSheets.map(n => `<option value="${n}">${n}</option>`).join('');
   });
+  document.getElementById('u-sheet').addEventListener('change', updateTaskDropdown);
+  document.getElementById('u-group').addEventListener('change', updateTaskDropdown);
+}
+
+function updateTaskDropdown() {
+  const sheet = document.getElementById('u-sheet').value;
+  const group = document.getElementById('u-group').value;
+  const taskSel = document.getElementById('u-task');
+  if (!sheet) { taskSel.innerHTML = '<option value="">-- Chọn công việc --</option>'; return; }
+  const tasks = allRows.filter(r => r.sheet === sheet && (!group || (r.data[1]||'') === group));
+  const unique = [...new Set(tasks.map(r => r.data[2]).filter(Boolean))];
+  taskSel.innerHTML = '<option value="">-- Chọn công việc --</option>' +
+    unique.map(t => '<option value="' + t + '">' + t + '</option>').join('');
 }
 
 function statusBadge(s) {
@@ -415,7 +428,7 @@ async function updateTask() {
       await apiAppend(sheet, [[sheet, group, task, person, date||'', 'P2 - QUAN TRỌNG', status, note]]);
       showToast('u-toast', `Đã thêm mới: [${sheet}] ${task} → ${status}`, true);
     }
-    document.getElementById('u-task').value = '';
+    document.getElementById('u-task').innerHTML = '<option value="">-- Chọn công việc --</option>';
     document.getElementById('u-note').value = '';
     document.getElementById('u-date').value = '';
     await loadAllSheets();
