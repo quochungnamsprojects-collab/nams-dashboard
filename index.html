@@ -48,6 +48,24 @@ tr:hover td { background: #fafaf8; }
 .save-row-btn { padding: 4px 10px; background: #1D9E75; color: #fff; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600; }
 .save-row-btn:hover { background: #0F6E56; }
 .save-row-btn:disabled { background: #9FE1CB; }
+.edit-name-input { padding: 3px 7px; border: 1px solid #1D9E75; border-radius: 5px; font-size: 12px; width: 160px; background: #fff; }
+.icon-btn { padding: 3px 7px; border: 1px solid #e5e5e0; border-radius: 5px; font-size: 11px; cursor: pointer; background: #fff; color: #555; }
+.icon-btn:hover { background: #f0f0ec; }
+.icon-btn.danger { border-color: #F09595; color: #A32D2D; }
+.icon-btn.danger:hover { background: #FCEBEB; }
+.subtask-row td { background: #fafaf8 !important; padding-left: 28px !important; font-size: 12px; }
+.subtask-row:hover td { background: #f5f5f2 !important; }
+.add-sub-btn { padding: 3px 8px; border: 1px dashed #1D9E75; border-radius: 5px; font-size: 11px; cursor: pointer; background: transparent; color: #1D9E75; }
+.add-sub-btn:hover { background: #EAF3DE; }
+.modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:#fff; border-radius:12px; padding:24px; width:480px; max-width:95vw; }
+.modal-title { font-size:15px; font-weight:600; margin-bottom:16px; }
+.modal-row { margin-bottom:12px; }
+.modal-label { font-size:12px; color:#666; margin-bottom:4px; font-weight:500; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+.btn-cancel { padding:8px 16px; border:1px solid #e5e5e0; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; }
+.btn-save-modal { padding:8px 20px; background:#1D9E75; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; }
 .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
 .flabel { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
 input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e5e5e0; border-radius: 8px; font-size: 13px; color: #1a1a1a; background: #fff; outline: none; font-family: inherit; }
@@ -66,19 +84,39 @@ textarea { height: 72px; resize: vertical; }
 .p1 { color: #A32D2D; font-weight: 600; }
 .p2 { color: #854F0B; }
 .p3 { color: #888; }
-.gantt-row { display: grid; grid-template-columns: 190px 1fr 90px; align-items: center; padding: 5px 0; border-bottom: 1px solid #f5f5f2; }
-.gantt-row:hover { background: #fafaf8; }
-.gantt-label { font-size: 12px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; }
-.gantt-bar-track { position: relative; height: 24px; background: #f0f0ec; border-radius: 4px; overflow: visible; }
-.gantt-bar { position: absolute; height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; min-width: 4px; }
-.gantt-today-line { position: absolute; width: 2px; background: #E24B4A; top: -4px; bottom: -4px; z-index: 10; }
-.gantt-month-divider { position: absolute; width: 1px; background: #ddd; top: -4px; bottom: -4px; }
-.gantt-month-label { position: absolute; top: -18px; font-size: 10px; color: #999; transform: translateX(-50%); white-space: nowrap; }
-.gantt-status { font-size: 11px; color: #555; padding-left: 10px; white-space: nowrap; }
+.gantt-outer { overflow: hidden; border: 1px solid #e5e5e0; border-radius: 8px; }
+.gantt-body { display: flex; }
+.gantt-labels { flex-shrink: 0; width: 190px; border-right: 1px solid #e5e5e0; }
+.gantt-label-hdr { height: 44px; border-bottom: 1px solid #e5e5e0; display: flex; align-items: center; padding: 0 12px; font-size: 11px; font-weight: 600; color: #888; background: #fafaf8; }
+.gantt-label-row { height: 36px; border-bottom: 1px solid #f0f0ec; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gantt-label-row:hover { background: #f5f5f2; }
+.gantt-chart-area { flex: 1; overflow-x: auto; cursor: grab; user-select: none; }
+.gantt-chart-area:active { cursor: grabbing; }
+.gantt-chart-inner { position: relative; }
+.gantt-header-row { height: 44px; border-bottom: 1px solid #e5e5e0; position: relative; background: #fafaf8; }
+.gantt-month-col { position: absolute; top: 0; bottom: 0; border-left: 1px solid #e5e5e0; }
+.gantt-month-col:first-child { border-left: none; }
+.gantt-month-name { position: absolute; left: 0; right: 0; top: 0; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #555; border-bottom: 1px solid #e5e5e0; }
+.gantt-week-ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; display: flex; }
+.gantt-week-tick { flex: 1; border-left: 1px solid #f0f0ec; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #bbb; }
+.gantt-bar-row { height: 36px; border-bottom: 1px solid #f0f0ec; position: relative; }
+.gantt-bar-row:hover { background: #fafaf8; }
+.gantt-bar-fill { position: absolute; height: 22px; top: 7px; border-radius: 4px; display: flex; align-items: center; padding: 0 7px; font-size: 10px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; min-width: 6px; transition: opacity .15s; cursor: pointer; }
+.gantt-bar-fill:hover { opacity: .85; }
+.gantt-today-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: #E24B4A; z-index: 20; pointer-events: none; }
+.gantt-today-marker::before { content: '▼'; position: absolute; top: -1px; left: -5px; font-size: 10px; color: #E24B4A; }
+.gantt-status-col { flex-shrink: 0; width: 90px; border-left: 1px solid #e5e5e0; }
+.gantt-status-hdr { height: 44px; border-bottom: 1px solid #e5e5e0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #888; background: #fafaf8; }
+.gantt-status-cell { height: 36px; border-bottom: 1px solid #f0f0ec; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #555; }
+.gantt-zoom-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.zoom-btn { width: 28px; height: 28px; border: 1px solid #e5e5e0; border-radius: 6px; background: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: #555; }
+.zoom-btn:hover { background: #f0f0ec; }
+.zoom-label { font-size: 12px; color: #888; min-width: 60px; text-align: center; }
 @media (max-width: 768px) {
   .metrics { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: 1fr; }
-  .gantt-row { grid-template-columns: 120px 1fr 70px; }
+  .gantt-labels { width: 120px; }
+  .gantt-status-col { width: 70px; }
 }
 </style>
 </head>
@@ -141,9 +179,22 @@ textarea { height: 72px; resize: vertical; }
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ddd;display:inline-block;border-radius:2px"></span>Ranh giới tháng</span>
         </div>
       </div>
-      <div class="filter-row" id="gantt-filter" style="margin-bottom:20px"></div>
-      <div style="overflow-x:auto">
-        <div id="gantt-container" style="min-width:700px"></div>
+      <div class="filter-row" id="gantt-filter" style="margin-bottom:16px"></div>
+      <div class="gantt-zoom-bar">
+        <button class="zoom-btn" onclick="ganttZoom(-1)" title="Thu nhỏ">−</button>
+        <span class="zoom-label" id="zoom-label">100%</span>
+        <button class="zoom-btn" onclick="ganttZoom(1)" title="Phóng to">+</button>
+        <button class="zoom-btn" onclick="ganttZoom(0)" title="Reset" style="width:auto;padding:0 10px;font-size:12px">Reset</button>
+        <span style="font-size:11px;color:#aaa;margin-left:8px">Kéo để di chuyển · Cuộn để zoom</span>
+      </div>
+      <div class="gantt-outer" id="gantt-outer">
+        <div class="gantt-body" id="gantt-body">
+          <div class="gantt-labels" id="gantt-labels"></div>
+          <div class="gantt-chart-area" id="gantt-chart-area">
+            <div class="gantt-chart-inner" id="gantt-chart-inner"></div>
+          </div>
+          <div class="gantt-status-col" id="gantt-status-col"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -225,6 +276,45 @@ textarea { height: 72px; resize: vertical; }
   </div>
 </div>
 
+<!-- EDIT TASK MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Chỉnh sửa task</div>
+    <div class="modal-row"><div class="modal-label">Tên task</div><input type="text" id="em-name" placeholder="Tên task..."></div>
+    <div class="modal-row"><div class="modal-label">Nhóm công việc</div>
+      <select id="em-group"><option>PLAN</option><option>KỊCH BẢN</option><option>CONTENT</option><option>DESIGN</option><option>PRODUCTION</option><option>EDIT VIDEO</option><option>CÔNG VIỆC PHÁT SINH</option></select>
+    </div>
+    <div class="modal-row"><div class="modal-label">Người làm</div>
+      <select id="em-person"><option>MR TÀI</option><option>MS DIỆP</option><option>MR HUY</option><option>MR HẢI ANH</option><option>MR TUYÊN</option><option>MS NHI</option><option>MR HƯNG</option><option>MR SƠN</option></select>
+    </div>
+    <div class="modal-row"><div class="modal-label">Trạng thái</div>
+      <select id="em-status"><option>Mới</option><option>Đang thực hiện</option><option>Đang đợi duyệt</option><option>Khách đã duyệt</option><option>Đã gửi khách</option><option>Hoàn thành</option><option>Đã AIR</option></select>
+    </div>
+    <div class="modal-row"><div class="modal-label">Deadline</div><input type="date" id="em-deadline"></div>
+    <div class="modal-row"><div class="modal-label">Ghi chú</div><textarea id="em-note" style="height:56px" placeholder="Ghi chú..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Huỷ</button>
+      <button class="btn-save-modal" onclick="saveModal()">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SUBTASK MODAL -->
+<div class="modal-overlay" id="sub-modal">
+  <div class="modal">
+    <div class="modal-title">Thêm subtask</div>
+    <div class="modal-row"><div class="modal-label">Tên subtask *</div><input type="text" id="sm-name" placeholder="VD: Review lần 1, Fix caption..."></div>
+    <div class="modal-row"><div class="modal-label">Người làm</div>
+      <select id="sm-person"><option>MR TÀI</option><option>MS DIỆP</option><option>MR HUY</option><option>MR HẢI ANH</option><option>MR TUYÊN</option><option>MS NHI</option><option>MR HƯNG</option><option>MR SƠN</option></select>
+    </div>
+    <div class="modal-row"><div class="modal-label">Deadline</div><input type="date" id="sm-deadline"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSubModal()">Huỷ</button>
+      <button class="btn-save-modal" onclick="saveSubModal()">Thêm subtask</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SPREADSHEET_ID = '1AoQ8t7MzLjQDIU8V_-e2PnWSms9NklxjVzQy0ngb5wo';
 const SA = {
@@ -279,7 +369,7 @@ async function loadAllSheets(){
     }
     updateMetrics();renderFilter();renderTable();populateSelects();
     const projs=sheetNames.filter(n=>n!=='TỔNG HỢP THÁNG 4');
-    activeGantt=projs[0]||'';renderGanttFilter();renderGantt();
+    activeGantt=projs[0]||'';renderGanttFilter();buildGanttPhases();renderGantt();
     const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} tasks`;
   } catch(e){
@@ -323,24 +413,39 @@ function renderFilter(){
 }
 function filterProj(p){activeProj=p;renderFilter();renderTable();}
 
+let editIdx=null, subParentIdx=null;
+
 function renderTable(){
   const filtered=activeProj==='ALL'?allRows:allRows.filter(r=>r.sheet===activeProj);
-  if(!filtered.length){document.getElementById('task-table').innerHTML='<tr><td colspan="8" class="loading-row">Không có dữ liệu</td></tr>';return;}
-  document.getElementById('task-table').innerHTML=filtered.map((r,i)=>{
+  if(!filtered.length){document.getElementById('task-table').innerHTML='<tr><td colspan="9" class="loading-row">Không có dữ liệu</td></tr>';return;}
+  const rows=[];
+  filtered.forEach((r,i)=>{
     const d=r.data,pri=d[5]||'',priClass=pri.includes('P1')?'p1':pri.includes('P2')?'p2':'p3';
     const pOpts=PERSONS.map(p=>`<option ${(d[3]||'')==p?'selected':''}>${p}</option>`).join('');
     const sOpts=STATUSES.map(s=>`<option ${(d[6]||'')==s?'selected':''}>${s}</option>`).join('');
-    return `<tr id="drow-${i}">
-      <td><span class="proj-tag">${r.sheet}</span></td>
+    const isSubtask=r.isSubtask||false;
+    const taskName=d[2]||'—';
+    rows.push(`<tr id="drow-${i}" class="${isSubtask?'subtask-row':''}">
+      <td><span class="proj-tag" style="font-size:10px">${r.sheet}</span></td>
       <td style="color:#666;font-size:12px">${d[1]||'—'}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d[2]||''}">${d[2]||'—'}</td>
+      <td style="max-width:200px">
+        <div style="display:flex;align-items:center;gap:6px">
+          ${isSubtask?'<span style="color:#aaa;font-size:10px">↳</span>':''}
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" title="${taskName}">${taskName}</span>
+          <button class="icon-btn" onclick="openEditModal(${i})" title="Sửa task" style="flex-shrink:0">✏️</button>
+        </div>
+      </td>
       <td><select class="inline-sel" id="dp-${i}">${pOpts}</select></td>
       <td style="white-space:nowrap;font-size:12px;color:#666">${d[4]||'—'}</td>
       <td class="${priClass}" style="font-size:12px">${pri||'—'}</td>
       <td><select class="inline-sel" id="ds-${i}">${sOpts}</select></td>
-      <td><button class="save-row-btn" onclick="saveRow(${i})">Lưu</button></td>
-    </tr>`;
-  }).join('');
+      <td style="white-space:nowrap">
+        <button class="save-row-btn" onclick="saveRow(${i})">Lưu</button>
+        ${!isSubtask?`<button class="add-sub-btn" onclick="openSubModal(${i})" style="margin-left:4px" title="Thêm subtask">+ Sub</button>`:''}
+      </td>
+    </tr>`);
+  });
+  document.getElementById('task-table').innerHTML=rows.join('');
 }
 
 async function saveRow(i){
@@ -359,90 +464,250 @@ async function saveRow(i){
   finally{btn.disabled=false;btn.textContent='Lưu';}
 }
 
+function openEditModal(i){
+  const filtered=activeProj==='ALL'?allRows:allRows.filter(r=>r.sheet===activeProj);
+  const r=filtered[i]; const d=r.data;
+  editIdx=i;
+  document.getElementById('em-name').value=d[2]||'';
+  document.getElementById('em-group').value=d[1]||'PLAN';
+  document.getElementById('em-person').value=d[3]||PERSONS[0];
+  document.getElementById('em-status').value=d[6]||'Mới';
+  document.getElementById('em-deadline').value=d[4]||'';
+  document.getElementById('em-note').value=d[7]||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('edit-modal').classList.remove('open');editIdx=null;}
+
+async function saveModal(){
+  if(editIdx===null) return;
+  const filtered=activeProj==='ALL'?allRows:allRows.filter(r=>r.sheet===activeProj);
+  const r=filtered[editIdx];
+  const name=document.getElementById('em-name').value.trim();
+  const group=document.getElementById('em-group').value;
+  const person=document.getElementById('em-person').value;
+  const status=document.getElementById('em-status').value;
+  const deadline=document.getElementById('em-deadline').value;
+  const note=document.getElementById('em-note').value.trim();
+  if(!name){alert('Vui lòng nhập tên task');return;}
+  const btn=document.querySelector('#edit-modal .btn-save-modal');
+  btn.disabled=true;btn.textContent='Đang lưu...';
+  try{
+    await apiPut(`${r.sheet}!A${r.rowNum}:H${r.rowNum}`,[[r.sheet,group,name,person,deadline,r.data[5]||'',status,note]]);
+    r.data[1]=group;r.data[2]=name;r.data[3]=person;r.data[4]=deadline;r.data[6]=status;r.data[7]=note;
+    closeModal();renderTable();updateMetrics();
+    showToast('dash-toast',`Đã cập nhật task: ${name}`,true);
+  }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
+  finally{btn.disabled=false;btn.textContent='Lưu thay đổi';}
+}
+
+function openSubModal(i){
+  subParentIdx=i;
+  document.getElementById('sm-name').value='';
+  document.getElementById('sm-deadline').value='';
+  document.getElementById('sub-modal').classList.add('open');
+}
+function closeSubModal(){document.getElementById('sub-modal').classList.remove('open');subParentIdx=null;}
+
+async function saveSubModal(){
+  if(subParentIdx===null) return;
+  const filtered=activeProj==='ALL'?allRows:allRows.filter(r=>r.sheet===activeProj);
+  const parent=filtered[subParentIdx];
+  const name=document.getElementById('sm-name').value.trim();
+  const person=document.getElementById('sm-person').value;
+  const deadline=document.getElementById('sm-deadline').value;
+  if(!name){alert('Vui lòng nhập tên subtask');return;}
+  const btn=document.querySelector('#sub-modal .btn-save-modal');
+  btn.disabled=true;btn.textContent='Đang thêm...';
+  try{
+    const subName=`  ↳ ${name}`;
+    const group=parent.data[1]||'';
+    await apiPost(parent.sheet,[[parent.sheet,group,subName,person,deadline||'',parent.data[5]||'P3 - BÌNH THƯỜNG','Mới','']]);
+    closeSubModal();
+    showToast('dash-toast',`Đã thêm subtask: ${name}`,true);
+    await loadAllSheets();
+  }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
+  finally{btn.disabled=false;btn.textContent='Thêm subtask';}
+}
+
 // ── GANTT ──────────────────────────────────────────────────────────────────────
 function mkDate(y,m,d){return new Date(y,m-1,d);}
+
+// ── GANTT STATE ────────────────────────────────────────────────────────────────
+const GANTT_START = mkDate(2026,4,1);
+const GANTT_END   = mkDate(2026,12,31);
+const TOTAL_DAYS  = (GANTT_END - GANTT_START) / 86400000;
+let zoomLevel = 1; // 1 = 100%, range 0.5 – 4
+let ganttPhases = [];
+
+const MONTHS_VN = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+function dayOffset(date){ return Math.max(0,(date - GANTT_START)/86400000); }
+function dayPct(date){ return dayOffset(date)/TOTAL_DAYS*100; }
+function dayW(s,e){ return Math.max(0.3,(e-s)/86400000/TOTAL_DAYS*100); }
+function getChartWidth(){ return Math.round(TOTAL_DAYS * zoomLevel * 4); } // px per day * zoom
+
 function renderGanttFilter(){
   const projs=sheetNames.filter(n=>n!=='TỔNG HỢP THÁNG 4');
   document.getElementById('gantt-filter').innerHTML=projs.map(p=>`<button class="filter-btn ${p===activeGantt?'active':''}" onclick="switchGantt('${p}')">${p}</button>`).join('');
 }
-function switchGantt(p){activeGantt=p;renderGanttFilter();renderGantt();}
+function switchGantt(p){activeGantt=p;renderGanttFilter();buildGanttPhases();renderGantt();}
+
+function ganttZoom(dir){
+  if(dir===0){zoomLevel=1;}
+  else{
+    const steps=[0.5,0.75,1,1.5,2,3,4];
+    const ci=steps.findIndex(s=>Math.abs(s-zoomLevel)<0.01);
+    const ni=Math.max(0,Math.min(steps.length-1,ci+dir));
+    zoomLevel=steps[ni];
+  }
+  document.getElementById('zoom-label').textContent=Math.round(zoomLevel*100)+'%';
+  renderGantt();
+}
+
+// Mouse drag to scroll
+function initGanttDrag(){
+  const el=document.getElementById('gantt-chart-area');
+  if(!el||el._dragInit) return;
+  el._dragInit=true;
+  let dragging=false,startX=0,scrollStart=0;
+  el.addEventListener('mousedown',e=>{dragging=true;startX=e.pageX;scrollStart=el.scrollLeft;el.style.cursor='grabbing';});
+  window.addEventListener('mouseup',()=>{dragging=false;if(el) el.style.cursor='grab';});
+  el.addEventListener('mousemove',e=>{if(!dragging) return;el.scrollLeft=scrollStart-(e.pageX-startX);});
+  el.addEventListener('wheel',e=>{e.preventDefault();ganttZoom(e.deltaY<0?1:-1);},{passive:false});
+}
+
+function buildGanttPhases(){
+  ganttPhases=[];
+  const sow=SOW[activeGantt];
+  if(!sow) return;
+  const [sy,sm,sd]=sow.s;
+
+  // Helper: generate monthly recurring phases for tháng 4-12
+  function addMonthly(label,group,color,startDay,endDay,months){
+    months.forEach(m=>{
+      const s=mkDate(2026,m,startDay);
+      const e=mkDate(2026,m,Math.min(endDay,new Date(2026,m,0).getDate()));
+      const mLabel=`${label} T${m}`;
+      ganttPhases.push({label:mLabel,group,s,e,c:color});
+    });
+  }
+
+  // PLAN (tháng 4 only, extend plan to later months manually if needed)
+  const planEnd4=mkDate(2026,4,sow.plan);
+  ganttPhases.push({label:'Plan content T4',group:'PLAN',s:mkDate(sy,sm,sd),e:planEnd4,c:'#185FA5'});
+
+  // Recurring months 4-12
+  const recurMonths=[4,5,6,7,8,9,10,11,12];
+  recurMonths.forEach(m=>{
+    const mDays=new Date(2026,m,0).getDate();
+    const p1s=m===4?new Date(planEnd4.getTime()+86400000):mkDate(2026,m,1);
+    const p1eDay=m===4?sow.post1:Math.min(sow.post1,mDays);
+    const p1e=mkDate(2026,m,p1eDay);
+    ganttPhases.push({label:`Content đợt 1 T${m}`,group:'CONTENT',s:p1s,e:p1e,c:'#1D9E75'});
+    ganttPhases.push({label:`Design đợt 1 T${m}`,group:'DESIGN',s:p1s,e:p1e,c:'#854F0B'});
+    const p2sDay=p1eDay+2,p2eDay=m===4?sow.post2:Math.min(sow.post2||5,mDays);
+    if(p2sDay<=mDays){
+      const p2s=mkDate(2026,m,Math.min(p2sDay,mDays));
+      const p2eM=p2eDay<=p2sDay?m+1:m;
+      const p2e=mkDate(2026,p2eM===13?1:p2eM,p2eDay<=p2sDay?Math.min(5,new Date(2026,p2eM===13?1:p2eM,0).getDate()):p2eDay);
+      if(p2e<=GANTT_END){
+        ganttPhases.push({label:`Content đợt 2 T${m}`,group:'CONTENT',s:p2s,e:p2e,c:'#0F6E56'});
+        ganttPhases.push({label:`Design đợt 2 T${m}`,group:'DESIGN',s:p2s,e:p2e,c:'#633806'});
+      }
+    }
+    if(sow.hasVideo && m<=8){
+      const ks=mkDate(2026,m,Math.min(p1eDay+1,mDays));
+      const ke=new Date(ks);ke.setDate(ke.getDate()+10);
+      if(ke<=GANTT_END) ganttPhases.push({label:`Kịch bản T${m}`,group:'KỊCH BẢN',s:ks,e:ke,c:'#534AB7'});
+      const ps=new Date(ke);ps.setDate(ps.getDate()+1);
+      const pe=new Date(ps);pe.setDate(pe.getDate()+3);
+      if(pe<=GANTT_END) ganttPhases.push({label:`Quay T${m}`,group:'PRODUCTION',s:ps,e:pe,c:'#993556'});
+      const es=new Date(pe);es.setDate(es.getDate()+1);
+      const ee=new Date(es);ee.setDate(ee.getDate()+6);
+      if(ee<=GANTT_END) ganttPhases.push({label:`Edit video T${m}`,group:'EDIT VIDEO',s:es,e:ee,c:'#3B6D11'});
+    }
+  });
+}
+
+function getPhaseStatus(group){
+  const rows=allRows.filter(r=>r.sheet===activeGantt&&(r.data[1]||'')===group);
+  if(!rows.length) return '<span style="color:#bbb;font-size:10px">—</span>';
+  const done=rows.filter(r=>(r.data[6]||'').toLowerCase().includes('hoàn thành')).length;
+  const pct=Math.round(done/rows.length*100);
+  const color=pct===100?'#3B6D11':pct>50?'#854F0B':'#185FA5';
+  return `<span style="color:${color};font-weight:600;font-size:11px">${done}/${rows.length}</span>`;
+}
 
 function renderGantt(){
-  const el=document.getElementById('gantt-container');
   const sow=SOW[activeGantt];
-  if(!sow){el.innerHTML='<div style="color:#aaa;padding:20px;text-align:center">Chưa có SOW cho dự án này</div>';return;}
+  const labelsEl=document.getElementById('gantt-labels');
+  const chartEl=document.getElementById('gantt-chart-inner');
+  const statusEl=document.getElementById('gantt-status-col');
+  const areaEl=document.getElementById('gantt-chart-area');
 
-  const gs=mkDate(2026,3,1),ge=mkDate(2026,6,1),totalMs=ge-gs;
-  const pct=dt=>Math.max(0,Math.min(100,(dt-gs)/totalMs*100));
-  const pw=(s,e)=>Math.max(0.8,pct(e)-pct(s));
-  const today=new Date(),todayP=pct(today);
-
-  const [sy,sm,sd]=sow.s;
-  const phases=[];
-
-  const planEnd=mkDate(2026,4,sow.plan);
-  phases.push({label:'Plan content tháng 4',group:'PLAN',s:mkDate(sy,sm,sd),e:planEnd,c:'#185FA5'});
-
-  const c1s=new Date(planEnd);c1s.setDate(c1s.getDate()+1);
-  const c1e=sow.post1<=28?mkDate(2026,4,sow.post1):mkDate(2026,5,sow.post1-28);
-  phases.push({label:'Content đợt 1 (4 posts)',group:'CONTENT',s:c1s,e:c1e,c:'#1D9E75'});
-  phases.push({label:'Design đợt 1 (4 posts)',group:'DESIGN',s:c1s,e:c1e,c:'#854F0B'});
-
-  const c2s=new Date(c1e);c2s.setDate(c2s.getDate()+2);
-  const c2e=sow.post2<=15?mkDate(2026,5,sow.post2):mkDate(2026,4,sow.post2);
-  phases.push({label:'Content đợt 2 (4 posts)',group:'CONTENT',s:c2s,e:c2e,c:'#0F6E56'});
-  phases.push({label:'Design đợt 2 (4 posts)',group:'DESIGN',s:c2s,e:c2e,c:'#633806'});
-
-  if(sow.hasVideo){
-    const ks=new Date(planEnd);ks.setDate(ks.getDate()+1);
-    const ke=new Date(ks);ke.setDate(ke.getDate()+12);
-    phases.push({label:'Kịch bản video',group:'KỊCH BẢN',s:ks,e:ke,c:'#534AB7'});
-    const ps=new Date(ke);ps.setDate(ps.getDate()+1);
-    const pe=new Date(ps);pe.setDate(pe.getDate()+4);
-    phases.push({label:'Chốt ngày quay',group:'PRODUCTION',s:ps,e:pe,c:'#993556'});
-    const es=new Date(pe);es.setDate(es.getDate()+1);
-    const ee=new Date(es);ee.setDate(ee.getDate()+7);
-    phases.push({label:'Edit video',group:'EDIT VIDEO',s:es,e:ee,c:'#3B6D11'});
+  if(!sow){
+    labelsEl.innerHTML='<div class="gantt-label-hdr">Giai đoạn</div><div style="padding:20px;color:#aaa;font-size:12px">Chưa có SOW</div>';
+    chartEl.innerHTML='';statusEl.innerHTML='';return;
   }
 
-  function getPhaseStatus(group){
-    const rows=allRows.filter(r=>r.sheet===activeGantt&&(r.data[1]||'')===group);
-    if(!rows.length) return '<span style="color:#aaa">Chưa có data</span>';
-    const done=rows.filter(r=>(r.data[6]||'').toLowerCase().includes('hoàn thành')).length;
-    const pctDone=Math.round(done/rows.length*100);
-    const color=pctDone===100?'#3B6D11':pctDone>50?'#854F0B':'#185FA5';
-    return `<span style="color:${color};font-weight:600">${done}/${rows.length} (${pctDone}%)</span>`;
+  const W=getChartWidth();
+  const today=new Date();
+  const todayOff=Math.max(0,Math.min(100,dayPct(today)));
+
+  // Build month columns for header
+  const months=[];
+  for(let m=4;m<=12;m++){
+    const ms=mkDate(2026,m,1);
+    const me=mkDate(2026,m+1===13?1:m+1,1);
+    const left=dayPct(ms);
+    const width=m<12?dayW(ms,me):100-left;
+    // count weeks
+    const days=new Date(2026,m,0).getDate();
+    const weeks=[];
+    for(let w=1;w<=days;w+=7) weeks.push(w);
+    months.push({m,label:MONTHS_VN[m-1],left,width,weeks,ms});
   }
 
-  const months=[{m:3,label:'Tháng 3/2026'},{m:4,label:'Tháng 4/2026'},{m:5,label:'Tháng 5/2026'}];
-  const decorations=months.map(({m,label})=>{
-    const lp=pct(mkDate(2026,m,1));
-    return `<div class="gantt-month-divider" style="left:${lp}%"></div><div class="gantt-month-label" style="left:${lp}%">${label}</div>`;
-  }).join('')+`<div class="gantt-today-line" style="left:${todayP}%"></div>`;
+  const monthCols=months.map(({label,left,width,weeks,m})=>`
+    <div class="gantt-month-col" style="left:${left/100*W}px;width:${width/100*W}px">
+      <div class="gantt-month-name">${label}</div>
+      <div class="gantt-week-ticks">
+        ${weeks.map(w=>`<div class="gantt-week-tick">${w}</div>`).join('')}
+      </div>
+    </div>`).join('');
 
-  const header=`<div style="display:grid;grid-template-columns:190px 1fr 90px;padding:20px 0 8px;border-bottom:1px solid #e5e5e0;margin-bottom:4px">
-    <div style="font-size:11px;font-weight:600;color:#888">Giai đoạn</div>
-    <div style="font-size:11px;font-weight:600;color:#888;padding-left:4px">Thời gian (Tháng 3 – Tháng 5/2026)</div>
-    <div style="font-size:11px;font-weight:600;color:#888;padding-left:10px">Tiến độ</div>
-  </div>`;
+  // Unique groups for label column
+  const groups=[...new Set(ganttPhases.map(p=>p.group))];
 
-  const rows=phases.map(p=>{
-    const l=pct(p.s),w=pw(p.s,p.e);
+  // Labels
+  labelsEl.innerHTML=`<div class="gantt-label-hdr">Giai đoạn</div>`+
+    ganttPhases.map(p=>`<div class="gantt-label-row" title="${p.label}">${p.label}</div>`).join('');
+
+  // Chart
+  const barRows=ganttPhases.map(p=>{
+    const l=dayPct(p.s)/100*W;
+    const w=Math.max(4,dayW(p.s,p.e)/100*W);
     const ds=p.s.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
     const de=p.e.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'});
-    return `<div class="gantt-row">
-      <div class="gantt-label" title="${p.label}">${p.label}</div>
-      <div class="gantt-bar-track">
-        ${decorations}
-        <div class="gantt-bar" style="left:${l}%;width:${w}%;background:${p.c}" title="${ds} → ${de}">
-          ${w>10?ds:''}
-        </div>
+    return `<div class="gantt-bar-row">
+      <div class="gantt-bar-fill" style="left:${l}px;width:${w}px;background:${p.c}" title="${p.label}: ${ds} → ${de}">
+        ${w>50?ds:''}
       </div>
-      <div class="gantt-status">${getPhaseStatus(p.group)}</div>
     </div>`;
   }).join('');
 
-  el.innerHTML=header+rows;
+  chartEl.style.width=W+'px';
+  chartEl.innerHTML=`
+    <div class="gantt-header-row" style="width:${W}px">${monthCols}
+      <div class="gantt-today-marker" style="left:${todayOff/100*W}px" title="Hôm nay"></div>
+    </div>
+    ${barRows}`;
+
+  // Status
+  statusEl.innerHTML=`<div class="gantt-status-hdr">Tiến độ</div>`+
+    ganttPhases.map(p=>`<div class="gantt-status-cell">${getPhaseStatus(p.group)}</div>`).join('');
+
+  initGanttDrag();
 }
 
 function switchTab(name){
