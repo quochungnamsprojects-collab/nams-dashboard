@@ -142,8 +142,9 @@ tr.row-subtask:hover td{background:#F3F2EF}
 .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .flabel{font-size:12px;color:#777;margin-bottom:4px;font-weight:600}
-input[type=text],input[type=url],input[type=date],select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:#fff;outline:none;font-family:inherit;transition:border .15s}
-input[type=text]:focus,input[type=url]:focus,input[type=date]:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(74,155,127,.12)}
+input[type=text],input[type=url],input[type=date],select:not(.status-sel):not(.pri-sel),textarea{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:#fff;outline:none;font-family:inherit;transition:border .15s}
+input[type=text]:focus,input[type=url]:focus,input[type=date]:focus,select:not(.status-sel):not(.pri-sel):focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(74,155,127,.12)}
+.status-sel,.pri-sel{all:unset;position:absolute;inset:0;width:100%;height:100%;cursor:pointer;opacity:0}
 textarea{height:68px;resize:vertical}
 .btn-submit{background:var(--green);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s}
 .btn-submit:hover{background:var(--green-dk)}.btn-submit:disabled{background:#A8D5C5;cursor:not-allowed}
@@ -228,17 +229,19 @@ tr.drag-over td{background:#EDF7F2 !important;border-top:2px solid var(--green) 
 
 /* RESIZABLE COLS */
 th{position:relative}
-.col-resizer{position:absolute;right:0;top:0;height:100%;width:5px;cursor:col-resize;z-index:10;background:transparent}
-.col-resizer:hover{background:var(--green);opacity:.4}
+.col-resizer{position:absolute;right:0;top:0;height:100%;width:6px;cursor:col-resize;z-index:10;background:transparent;border-right:2px solid transparent;transition:border-color .15s}
+.col-resizer:hover,.col-resizer.active{border-right-color:var(--green);background:rgba(74,155,127,.08)}
 table{table-layout:fixed}
 
 /* STATUS PILL CELL */
-.status-cell-wrap{position:relative;display:inline-flex;align-items:center;cursor:pointer;min-width:120px}
-.status-cell-wrap select.status-sel{position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;font-size:1px}
-.pri-cell-wrap{position:relative;display:inline-flex;align-items:center;cursor:pointer}
-.pri-cell-wrap select.pri-sel{position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;font-size:1px}
-.status-cell-wrap:hover span,.pri-cell-wrap:hover span{opacity:.85;transform:scale(.98)}
-.status-cell-wrap span,.pri-cell-wrap span{transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+.status-cell-wrap{position:relative;display:inline-block;cursor:pointer;min-width:120px}
+.status-cell-wrap .pill-label{pointer-events:none;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:7px;font-size:11px;font-weight:600;white-space:nowrap;transition:opacity .15s}
+.status-cell-wrap:hover .pill-label{opacity:.8}
+.status-cell-wrap select.status-sel{position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;border:none;padding:0;margin:0;font-size:13px !important;background:transparent !important;color:inherit !important}
+.pri-cell-wrap{position:relative;display:inline-block;cursor:pointer}
+.pri-cell-wrap .pill-label{pointer-events:none;display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;transition:opacity .15s}
+.pri-cell-wrap:hover .pill-label{opacity:.8}
+.pri-cell-wrap select.pri-sel{position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;border:none;padding:0;margin:0;font-size:13px !important;background:transparent !important;color:inherit !important}
 
 @media(max-width:768px){.metrics{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.gantt-labels{width:120px}.proj-cards{grid-template-columns:repeat(2,1fr)}.proj-info-grid{grid-template-columns:1fr}}
 </style>
@@ -685,13 +688,11 @@ const PRI_CFG={
 
 function statusPill(s){
   const c=STATUS_CFG[s]||STATUS_CFG['Mới'];
-  return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;background:${c.bg};color:${c.color};font-size:11px;font-weight:600;white-space:nowrap">
-    <span style="color:${c.dot};font-size:10px">${c.icon}</span>${s}
-  </span>`;
+  return `<span class="pill-label" style="background:${c.bg};color:${c.color}"><span style="color:${c.dot};font-size:10px">${c.icon}</span>${s}</span>`;
 }
 function priPill(p){
   const c=PRI_CFG[p]||PRI_CFG['P3 - BÌNH THƯỜNG'];
-  return `<span style="padding:2px 7px;border-radius:5px;background:${c.bg};color:${c.color};font-size:10px;font-weight:700">${c.label}</span>`;
+  return `<span class="pill-label" style="background:${c.bg};color:${c.color}">${c.label}</span>`;
 }
 
 // ── DRAG-DROP STATE ───────────────────────────────────────────────────────────
@@ -789,16 +790,20 @@ function renderTable(){
 // Update pill without re-render
 function updateStatusPill(sel,i){
   const v=sel.value;
-  const wrap=sel.closest('.status-cell-wrap');
-  if(wrap) wrap.querySelector('span').outerHTML; // replaced below
-  const pill=wrap.querySelector('span');
-  if(pill){const c=STATUS_CFG[v]||STATUS_CFG['Mới'];pill.style.background=c.bg;pill.style.color=c.color;pill.innerHTML=`<span style="color:${c.dot};font-size:10px">${c.icon}</span>${v}`;}
+  const pill=sel.closest('.status-cell-wrap')?.querySelector('.pill-label');
+  if(pill){
+    const c=STATUS_CFG[v]||STATUS_CFG['Mới'];
+    pill.style.background=c.bg;pill.style.color=c.color;
+    pill.innerHTML=`<span style="color:${c.dot};font-size:10px">${c.icon}</span>${v}`;
+  }
 }
 function updatePriPill(sel,i){
   const v=sel.value;
-  const wrap=sel.closest('.pri-cell-wrap');
-  const pill=wrap?.querySelector('span');
-  if(pill){const c=PRI_CFG[v]||PRI_CFG['P3 - BÌNH THƯỜNG'];pill.style.background=c.bg;pill.style.color=c.color;pill.textContent=c.label;}
+  const pill=sel.closest('.pri-cell-wrap')?.querySelector('.pill-label');
+  if(pill){
+    const c=PRI_CFG[v]||PRI_CFG['P3 - BÌNH THƯỜNG'];
+    pill.style.background=c.bg;pill.style.color=c.color;pill.textContent=c.label;
+  }
 }
 
 // ── DRAG & DROP ROWS ──────────────────────────────────────────────────────────
