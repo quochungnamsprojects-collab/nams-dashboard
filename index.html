@@ -220,6 +220,26 @@ textarea{height:68px;resize:vertical}
 .gantt-legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .gantt-legend-item{display:flex;align-items:center;gap:5px}
 
+/* DRAG & DROP */
+.drag-handle{cursor:grab;color:#ccc;font-size:14px;padding:0 4px 0 2px;user-select:none;vertical-align:middle}
+.drag-handle:hover{color:#4A9B7F}
+.drag-handle:active{cursor:grabbing}
+tr.drag-over td{background:#EDF7F2 !important;border-top:2px solid var(--green) !important}
+
+/* RESIZABLE COLS */
+th{position:relative}
+.col-resizer{position:absolute;right:0;top:0;height:100%;width:5px;cursor:col-resize;z-index:10;background:transparent}
+.col-resizer:hover{background:var(--green);opacity:.4}
+table{table-layout:fixed}
+
+/* STATUS PILL CELL */
+.status-cell-wrap{position:relative;display:inline-flex;align-items:center;cursor:pointer;min-width:120px}
+.status-cell-wrap select.status-sel{position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;font-size:1px}
+.pri-cell-wrap{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.pri-cell-wrap select.pri-sel{position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;font-size:1px}
+.status-cell-wrap:hover span,.pri-cell-wrap:hover span{opacity:.85;transform:scale(.98)}
+.status-cell-wrap span,.pri-cell-wrap span{transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+
 @media(max-width:768px){.metrics{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.gantt-labels{width:120px}.proj-cards{grid-template-columns:repeat(2,1fr)}.proj-info-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -547,21 +567,12 @@ async function loadAll(){
 }
 
 function sortSubs(){
-  const bySheet={};
-  allRows.forEach(r=>{if(!bySheet[r.sheet])bySheet[r.sheet]=[];bySheet[r.sheet].push(r);});
-  allRows=[];
-  for(const name of sheetNames){
-    if(name==='PROJECT_INFO'||name.includes('TỔNG HỢP')) continue;
-    const rows=bySheet[name]||[];
-    const sorted=[];
-    rows.forEach(r=>{
-      if(!r.isSubtask){
-        sorted.push(r);
-        rows.filter(s=>s.isSubtask&&s.rowNum>r.rowNum&&!sorted.includes(s)).slice(0,20).forEach(s=>sorted.push(s));
-      }
-    });
-    allRows.push(...sorted);
-  }
+  // Giữ nguyên thứ tự từ Sheets — KHÔNG sort lại
+  // Chỉ đảm bảo subtask được đánh dấu đúng
+  // Thứ tự đúng đã được script reorderAllSheets() xử lý trong Sheets
+  allRows.forEach(r=>{
+    r.isSubtask=(r.data[2]||'').startsWith('  ↳');
+  });
 }
 
 function isDone(r){
@@ -653,17 +664,40 @@ function getF(){
   return f;
 }
 
-// ── TABLE ─────────────────────────────────────────────────────────────────────
-function sBadge(s){
-  const m={'Mới':'b-new','Đang thực hiện':'b-doing','Đang đợi duyệt':'b-waiting','Khách đã duyệt':'b-approved','Đã gửi khách':'b-sent','Hoàn thành':'b-done','Đã AIR':'b-air'};
-  return `<span class="badge ${m[s]||'b-new'}">${s}</span>`;
+// ── STATUS CONFIG ─────────────────────────────────────────────────────────────
+const STATUS_CFG={
+  'Mới':              {bg:'#EBF3FF',color:'#3A6EA8',dot:'#3A6EA8',icon:'○'},
+  'Đang thực hiện':   {bg:'#FFF3E0',color:'#B85C00',dot:'#F09030',icon:'◐'},
+  'Đang đợi duyệt':   {bg:'#FFF8E0',color:'#8A6800',dot:'#E0B800',icon:'◑'},
+  'Khách đã duyệt':   {bg:'#E8F5EE',color:'#2E7050',dot:'#4AB87A',icon:'◕'},
+  'Đã gửi khách':     {bg:'#F0EEFF',color:'#5040A0',dot:'#8070D0',icon:'◉'},
+  'Hoàn thành':       {bg:'#E0F5EC',color:'#1E6E40',dot:'#2EA865',icon:'●'},
+  'Đã AIR':           {bg:'#E8F0FF',color:'#1A4EA0',dot:'#2A6AE0',icon:'★'},
+};
+const PRI_CFG={
+  'P1 - ƯU TIÊN':    {bg:'#FDEAEA',color:'#B83030',label:'P1'},
+  'P2 - QUAN TRỌNG': {bg:'#FDF6E3',color:'#8A5800',label:'P2'},
+  'P3 - BÌNH THƯỜNG':{bg:'#F2F2F2',color:'#888',   label:'P3'},
+};
+
+function statusPill(s){
+  const c=STATUS_CFG[s]||STATUS_CFG['Mới'];
+  return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;background:${c.bg};color:${c.color};font-size:11px;font-weight:600;white-space:nowrap">
+    <span style="color:${c.dot};font-size:10px">${c.icon}</span>${s}
+  </span>`;
 }
+function priPill(p){
+  const c=PRI_CFG[p]||PRI_CFG['P3 - BÌNH THƯỜNG'];
+  return `<span style="padding:2px 7px;border-radius:5px;background:${c.bg};color:${c.color};font-size:10px;font-weight:700">${c.label}</span>`;
+}
+
+// ── DRAG-DROP STATE ───────────────────────────────────────────────────────────
+let dragSrcIdx=null;
 
 function renderTable(){
   const filtered=getF();
   if(!filtered.length){document.getElementById('task-table').innerHTML='<tr><td colspan="8" class="loading-row">Không có dữ liệu</td></tr>';return;}
 
-  // Group tasks by project+group for headers
   const rows=[];
   let lastGroup='';
 
@@ -673,56 +707,160 @@ function renderTable(){
     const ds=dlSt(r);
     const rc=r.isSubtask?'row-subtask':ds==='done'?'row-done':ds==='overdue'?'row-overdue':ds==='soon'?'row-soon':'row-normal';
     const c=PROJ_COLORS[r.sheet]||'#888';
-    const pri=d[5]||'',priClass=pri.includes('P1')?'p1':pri.includes('P2')?'p2':'p3';
     const pOpts=teamMembers.map(p=>`<option ${(d[3]||'')==p?'selected':''}>${p}</option>`).join('');
     const sOpts=STATUSES.map(s=>`<option ${(d[6]||'')==s?'selected':''}>${s}</option>`).join('');
     const prOpts=PRIORITIES.map(p=>`<option ${(d[5]||'')==p?'selected':''}>${p}</option>`).join('');
 
     // Group header
     if(!r.isSubtask&&groupKey!==lastGroup){
-      rows.push(`<tr class="row-group-hdr"><td colspan="8" style="padding-left:10px">
-        <span style="color:${c}">●</span> ${r.sheet} &nbsp;·&nbsp; ${g||'—'}
+      rows.push(`<tr class="row-group-hdr"><td colspan="8">
+        <span style="color:${c};margin-right:4px">●</span>${r.sheet} · ${g||'—'}
       </td></tr>`);
       lastGroup=groupKey;
     }
 
-    // Project cell
+    // Drag handle + project cell
+    const dragHandle=`<span class="drag-handle" draggable="true"
+      ondragstart="dragStart(event,${i})" ondragover="dragOver(event)"
+      ondrop="dragDrop(event,${i})" ondragend="dragEnd(event)"
+      title="Kéo để sắp xếp">⠿</span>`;
+
     const projCell=r.isSubtask
       ?`<div style="font-size:10px;color:#ccc;padding-left:14px">↳ sub</div>`
       :`<div style="font-size:10px;font-weight:700;color:${c}">${r.sheet}</div>`;
 
-    // Task name — inline editable
+    // Task name
     const rawName=(d[2]||'').replace(/^\s*↳\s*/,'');
-    const indent=r.isSubtask?'padding-left:22px;':'';
-    const nameCell=`<div style="${indent}display:flex;align-items:center;gap:6px">
+    const nameCell=`<div style="${r.isSubtask?'padding-left:20px;':''}display:flex;align-items:center;gap:6px">
       ${r.isSubtask?'<span style="color:#ccc;font-size:11px;flex-shrink:0">↳</span>':''}
-      <span class="task-name-display" id="tn-${i}" onclick="editTaskName(${i},this)" title="Click để sửa" style="${r.isSubtask?'color:#666;font-style:italic;':'font-weight:500;'}">${rawName}</span>
+      <span class="task-name-display" id="tn-${i}" onclick="editTaskName(${i},this)"
+        style="${r.isSubtask?'color:#666;font-style:italic;':'font-weight:500;'}font-size:12px"
+        title="Click để sửa tên">${rawName}</span>
     </div>`;
 
-    // Deadline cell
+    // Deadline
     const dlStr=d[4]||'';
     let dlCell='';
-    if(ds==='overdue') dlCell=`<div><span class="dl-late">⚠ Trễ</span><input class="inline-date" value="${dlStr}" onchange="asDate(${i},this.value)" style="margin-top:2px;display:block"></div>`;
-    else if(ds==='soon') dlCell=`<div><span class="dl-soon">🔔 Sắp hạn</span><input class="inline-date" value="${dlStr}" onchange="asDate(${i},this.value)" style="margin-top:2px;display:block"></div>`;
+    if(ds==='overdue') dlCell=`<div><span class="dl-late">⚠ Trễ</span><br><input class="inline-date" value="${dlStr}" onchange="asDate(${i},this.value)"></div>`;
+    else if(ds==='soon') dlCell=`<div><span class="dl-soon">🔔 Sắp</span><br><input class="inline-date" value="${dlStr}" onchange="asDate(${i},this.value)"></div>`;
     else dlCell=`<input class="inline-date" value="${dlStr}" placeholder="ngày..." onchange="asDate(${i},this.value)">`;
+
+    // Status — hiển thị pill, click để mở dropdown ẩn
+    const curStatus=d[6]||'Mới';
+    const statusCell=`<div class="status-cell-wrap" onclick="this.querySelector('.status-sel').focus()">
+      ${statusPill(curStatus)}
+      <select class="status-sel" id="ds-${i}" onchange="asRow(${i});updateStatusPill(this,${i})">${sOpts}</select>
+    </div>`;
+
+    // Priority pill
+    const curPri=d[5]||'P3 - BÌNH THƯỜNG';
+    const priCell=`<div class="pri-cell-wrap" onclick="this.querySelector('.pri-sel').focus()">
+      ${priPill(curPri)}
+      <select class="pri-sel" id="dpr-${i}" onchange="asRow(${i});updatePriPill(this,${i})">${prOpts}</select>
+    </div>`;
+
+    // Person
+    const personCell=`<select class="inline-sel" id="dp-${i}" onchange="asRow(${i})" style="font-size:11px">${pOpts}</select>`;
 
     const noteVal=(d[7]||'').replace(/"/g,'&quot;');
     const actions=r.isSubtask
-      ?`<button class="icon-btn red" onclick="openDel(${i})" title="Xóa">🗑</button>`
-      :`<div style="display:flex;gap:3px;flex-wrap:nowrap"><button class="add-sub-btn" onclick="openSub(${i})">+Sub</button><button class="icon-btn red" onclick="openDel(${i})">🗑</button></div>`;
+      ?`<button class="icon-btn red" onclick="openDel(${i})">✕</button>`
+      :`<div style="display:flex;gap:3px"><button class="add-sub-btn" onclick="openSub(${i})">+Sub</button><button class="icon-btn red" onclick="openDel(${i})">✕</button></div>`;
 
-    rows.push(`<tr class="${rc}" id="drow-${i}">
-      <td>${projCell}</td>
+    rows.push(`<tr class="${rc}" id="drow-${i}" data-idx="${i}">
+      <td style="width:30px;padding:0 4px">${dragHandle}${projCell}</td>
       <td>${nameCell}</td>
-      <td><select class="inline-sel" id="dp-${i}" onchange="asRow(${i})">${pOpts}</select></td>
+      <td>${personCell}</td>
       <td>${dlCell}</td>
-      <td><select class="inline-sel" id="dpr-${i}" onchange="asRow(${i})" style="max-width:86px">${prOpts}</select></td>
-      <td><select class="inline-sel" id="ds-${i}" onchange="asRow(${i})">${sOpts}</select>${ds==='done'?' <span style="color:#3A8A5A;font-size:11px">✓</span>':''}</td>
+      <td>${priCell}</td>
+      <td>${statusCell}</td>
       <td><input class="inline-note" value="${noteVal}" placeholder="Ghi chú..." onchange="asNote(${i},this.value)"></td>
       <td>${actions}</td>
     </tr>`);
   });
   document.getElementById('task-table').innerHTML=rows.join('');
+  initColResize();
+}
+
+// Update pill without re-render
+function updateStatusPill(sel,i){
+  const v=sel.value;
+  const wrap=sel.closest('.status-cell-wrap');
+  if(wrap) wrap.querySelector('span').outerHTML; // replaced below
+  const pill=wrap.querySelector('span');
+  if(pill){const c=STATUS_CFG[v]||STATUS_CFG['Mới'];pill.style.background=c.bg;pill.style.color=c.color;pill.innerHTML=`<span style="color:${c.dot};font-size:10px">${c.icon}</span>${v}`;}
+}
+function updatePriPill(sel,i){
+  const v=sel.value;
+  const wrap=sel.closest('.pri-cell-wrap');
+  const pill=wrap?.querySelector('span');
+  if(pill){const c=PRI_CFG[v]||PRI_CFG['P3 - BÌNH THƯỜNG'];pill.style.background=c.bg;pill.style.color=c.color;pill.textContent=c.label;}
+}
+
+// ── DRAG & DROP ROWS ──────────────────────────────────────────────────────────
+function dragStart(e,idx){
+  dragSrcIdx=idx;
+  e.dataTransfer.effectAllowed='move';
+  e.currentTarget.closest('tr').style.opacity='.4';
+}
+function dragEnd(e){
+  e.currentTarget.closest('tr').style.opacity='1';
+  document.querySelectorAll('tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));
+}
+function dragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  const tr=e.currentTarget.closest('tr');
+  document.querySelectorAll('tr.drag-over').forEach(t=>t.classList.remove('drag-over'));
+  tr.classList.add('drag-over');
+}
+async function dragDrop(e,targetIdx){
+  e.preventDefault();
+  if(dragSrcIdx===null||dragSrcIdx===targetIdx) return;
+  const filtered=getF();
+  const src=filtered[dragSrcIdx],tgt=filtered[targetIdx];
+  if(!src||!tgt||src.sheet!==tgt.sheet){showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);return;}
+
+  // Swap in allRows
+  const si=allRows.indexOf(src),ti=allRows.indexOf(tgt);
+  if(si<0||ti<0) return;
+  allRows.splice(si,1);
+  allRows.splice(ti,0,src);
+
+  // Swap rowNum for Sheets write
+  const tmpRow=src.rowNum;src.rowNum=tgt.rowNum;tgt.rowNum=tmpRow;
+
+  renderTable();showAS(true);
+  // Write both rows to Sheets
+  try{
+    await apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[[src.sheet,src.data[1]||'',src.data[2]||'',src.data[3]||'',src.data[4]||'',src.data[5]||'',src.data[6]||'',src.data[7]||'']]);
+    await apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[[tgt.sheet,tgt.data[1]||'',tgt.data[2]||'',tgt.data[3]||'',tgt.data[4]||'',tgt.data[5]||'',tgt.data[6]||'',tgt.data[7]||'']]);
+    showToast('dash-toast','Đã đổi vị trí task',true);
+  }catch(err){showToast('dash-toast','Lỗi lưu vị trí: '+err.message,false);}
+  finally{showAS(false);}
+  dragSrcIdx=null;
+}
+
+// ── RESIZABLE COLUMNS ─────────────────────────────────────────────────────────
+function initColResize(){
+  const table=document.getElementById('main-table');
+  if(!table||table._resizeInit) return;
+  table._resizeInit=true;
+  const ths=table.querySelectorAll('th');
+  ths.forEach(th=>{
+    const resizer=document.createElement('div');
+    resizer.className='col-resizer';
+    th.appendChild(resizer);
+    let startX,startW;
+    resizer.addEventListener('mousedown',e=>{
+      startX=e.clientX;startW=th.offsetWidth;
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+      e.preventDefault();
+    });
+    function onMove(e){th.style.width=(startW+e.clientX-startX)+'px';th.style.minWidth='40px';}
+    function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
+  });
 }
 
 // ── INLINE TASK NAME EDIT ──────────────────────────────────────────────────────
