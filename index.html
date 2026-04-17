@@ -19,6 +19,29 @@
   --p-green:#BFFCC6;--p-green2:#DBFFD6;--p-green3:#F3FFE3;--p-green4:#E7FFAC;--p-yellow:#FFFFD1;
   --p-salmon:#FFC9DE;--p-coral:#FFABAB;--p-peach:#FFBEBC;--p-peach2:#FFCBC1;--p-orange:#FFF5BA;
 }
+
+/* LOGIN SCREEN */
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#ECD4FF 0%,#ACE7FF 50%,#AFF8DB 100%);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.login-box{background:#fff;border-radius:20px;padding:40px 36px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(100,80,180,.18)}
+.login-logo{width:52px;height:52px;background:linear-gradient(135deg,#B28DFF,#85E3FF);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;margin:0 auto 16px}
+.login-title{text-align:center;font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:4px}
+.login-sub{text-align:center;font-size:13px;color:#888;margin-bottom:28px}
+.login-field{margin-bottom:14px}
+.login-label{font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block}
+.login-input{width:100%;padding:11px 14px;border:1.5px solid #E8E6E0;border-radius:10px;font-size:14px;outline:none;transition:border .15s;font-family:inherit}
+.login-input:focus{border-color:#B28DFF;box-shadow:0 0 0 3px rgba(178,141,255,.15)}
+.login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#B28DFF,#85E3FF);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:opacity .15s;letter-spacing:.02em}
+.login-btn:hover{opacity:.9}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+.login-err{background:#FFB5E8;color:#8B0060;border-radius:8px;padding:9px 12px;font-size:13px;margin-top:12px;display:none;font-weight:500;text-align:center}
+.login-footer{text-align:center;font-size:11px;color:#bbb;margin-top:20px}
+/* USER BADGE in header */
+.user-badge{display:flex;align-items:center;gap:8px;padding:5px 12px;background:#ECD4FF;border-radius:999px;cursor:pointer;transition:background .15s}
+.user-badge:hover{background:#D5AAFF}
+.user-avatar{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#B28DFF,#85E3FF);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:#4A3A8A}
+.user-role{font-size:10px;color:#7A6AAA}
+
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 
 /* HEADER */
@@ -275,6 +298,10 @@ textarea{height:70px;resize:vertical}
     <span class="sync-info" id="sync-info">Chưa sync</span>
     <span id="autosave-ind" style="font-size:12px;color:var(--green);display:none"><span class="saving-dot"></span>Đang lưu...</span>
     <button class="sync-btn" id="sync-btn" onclick="loadAll()">↻ Sync</button>
+    <div class="user-badge" id="user-badge" onclick="doLogout()" title="Click để đăng xuất" style="display:none">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div><div class="user-name" id="user-name-display">—</div><div class="user-role" id="user-role-display">—</div></div>
+    </div>
   </div>
 </header>
 
@@ -293,7 +320,8 @@ textarea{height:70px;resize:vertical}
     <button class="tab" onclick="switchTab('gantt')">Gantt Chart</button>
     <button class="tab" onclick="switchTab('clone')">Tháng mới</button>
     <button class="tab" onclick="switchTab('perf')">📊 Hiệu suất</button>
-    <button class="tab" onclick="switchTab('team')">👥 Nhân sự</button>
+    <button class="tab admin-only" onclick="switchTab('team')">👥 Nhân sự</button>
+    <button class="tab admin-only" onclick="switchTab('users')">🔑 Quản lý User</button>
     <button class="tab" onclick="switchTab('add')">+ Thêm task</button>
   </div>
 
@@ -440,6 +468,9 @@ textarea{height:70px;resize:vertical}
           <select id="perf-proj" onchange="renderPerf()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
             <option value="ALL">Tất cả dự án</option>
           </select>
+          <select id="perf-member" onchange="renderPerf()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
+            <option value="ALL">Tất cả nhân viên</option>
+          </select>
         </div>
       </div>
       <div id="perf-content"><div class="loading-row">Nhấn Sync để tải dữ liệu</div></div>
@@ -457,6 +488,23 @@ textarea{height:70px;resize:vertical}
       </div>
       <div style="margin-top:10px;font-size:12px;color:var(--faint)">Lưu vào PROJECT_INFO · Đồng bộ tất cả dropdown</div>
       <div class="toast" id="team-toast"></div>
+    </div>
+  </div>
+
+  <!-- USER MANAGEMENT -->
+  <div id="tab-users" class="section">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="card-title" style="margin:0">Quản lý tài khoản</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">Thay đổi có hiệu lực ngay khi user đăng nhập lần sau</div>
+        </div>
+        <button class="btn-submit" onclick="openAddUserModal()" style="padding:8px 18px;font-size:13px">+ Thêm tài khoản</button>
+      </div>
+      <div id="users-table-wrap">
+        <div class="loading-row"><span class="spinner"></span>Đang tải...</div>
+      </div>
+      <div class="toast" id="users-toast"></div>
     </div>
   </div>
 
@@ -777,17 +825,34 @@ function renderTable(){
     else if(ds==='soon') dlCell=`<div><span class="dl-soon">🔔 Sắp</span><br>${dlInputBase}</div>`;
     else dlCell=dlInputBase;
     const noteVal=(d[7]||'').replace(/"/g,'&quot;');
-    const actions=r.isSubtask?`<button class="icon-btn red" onclick="openDel(${i})">✕</button>`
-      :`<div style="display:flex;gap:3px"><button class="add-sub-btn" onclick="openSub(${i})">+Sub</button><button class="icon-btn red" onclick="openDel(${i})">✕</button></div>`;
+    const canEditRow=canEdit(d[3]);
+    const actions=r.isSubtask
+      ?`${canEditRow||isAdmin()?`<button class="icon-btn red" onclick="openDel(${i})">✕</button>`:''}`
+      :`<div style="display:flex;gap:3px">
+          ${canEditRow||isAdmin()?`<button class="add-sub-btn" onclick="openSub(${i})">+Sub</button>`:''}
+          ${isAdmin()?`<button class="icon-btn red" onclick="openDel(${i})">✕</button>`:''}
+        </div>`;
     rows.push(`<tr class="${rc}" id="drow-${i}" data-idx="${i}">
       <td style="padding:0;text-align:center">${dragHandle}</td>
       <td>${projCell}</td>
       <td>${nameCell}</td>
-      <td><select class="inline-sel" id="dp-${i}" onchange="asRow(${i})">${pOpts}</select></td>
+      <td>${canEditRow||isAdmin()?`<select class="inline-sel" id="dp-${i}" onchange="asRow(${i})">${pOpts}</select>`:`<span style="font-size:12px;color:var(--muted);padding:4px">${d[3]||'—'}</span><input type="hidden" id="dp-${i}" value="${d[3]||''}">`}</td>
       <td>${dlCell}</td>
-      <td><div class="pri-cell-wrap">${priPill(d[5]||'P3 - BÌNH THƯỜNG')}<select class="pri-sel" id="dpr-${i}" onchange="asRow(${i});updatePriPill(this)">${prOpts}</select></div></td>
-      <td><div class="status-cell-wrap">${statusPill(d[6]||'Mới')}<select class="status-sel" id="ds-${i}" onchange="asRow(${i});updateStatusPill(this)">${sOpts}</select></div></td>
-      <td><textarea class="inline-note" placeholder="Ghi chú..." oninput="autoResizeNote(this);asNote(${i},this.value)" onfocus="autoResizeNote(this)">${noteVal}</textarea></td>
+      <td>
+        ${canEditRow||isAdmin()
+          ?`<div class="pri-cell-wrap">${priPill(d[5]||'P3 - BÌNH THƯỜNG')}<select class="pri-sel" id="dpr-${i}" onchange="asRow(${i});updatePriPill(this)">${prOpts}</select></div>`
+          :`${priPill(d[5]||'P3 - BÌNH THƯỜNG')}<input type="hidden" id="dpr-${i}" value="${d[5]||''}">`}
+      </td>
+      <td>
+        <div class="status-cell-wrap" style="${canEditRow||isAdmin()?'':'pointer-events:none;opacity:.85'}">
+          ${statusPill(d[6]||'Mới')}
+          ${canEditRow||isAdmin()?`<select class="status-sel" id="ds-${i}" onchange="asRow(${i});updateStatusPill(this)">${sOpts}</select>`:`<input type="hidden" id="ds-${i}" value="${d[6]||''}">`}
+        </div>
+      </td>
+      <td>${canEditRow||isAdmin()
+        ?`<textarea class="inline-note" placeholder="Ghi chú..." oninput="autoResizeNote(this);asNote(${i},this.value)" onfocus="autoResizeNote(this)">${noteVal}</textarea>`
+        :`<span style="font-size:12px;color:var(--muted);padding:4px 6px;display:block">${noteVal||'—'}</span>`
+      }</td>
       <td>${actions}</td>
     </tr>`);
   });
@@ -1212,6 +1277,11 @@ function populateSelects(){
 async function addTask(){
   const sheet=document.getElementById('a-sheet').value,group=document.getElementById('a-group').value;
   const task=document.getElementById('a-task').value.trim(),person=document.getElementById('a-person').value;
+  // For members: force assign to themselves
+  if(!isAdmin()){
+    const personSel=document.getElementById('a-person');
+    if(personSel) personSel.value=currentUser.name;
+  }
   const deadlineRaw=document.getElementById('a-deadline').value;
   const deadline=deadlineRaw&&deadlineRaw.includes('-')?fromISODate(deadlineRaw):deadlineRaw;
   const priority=document.getElementById('a-priority').value;
@@ -1343,12 +1413,13 @@ function renderGantt(){
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function switchTab(name){
-  const tabs=['dashboard','today','info','gantt','clone','perf','team','add'];
+  const tabs=['dashboard','today','info','gantt','clone','perf','team','users','add'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(name==='today') renderToday();
   if(name==='perf') renderPerf();
+  if(name==='users') renderUsersTable();
 }
 function showToast(id,msg,ok){
   const el=document.getElementById(id);
@@ -1375,9 +1446,19 @@ function renderPerf(){
   if(ps){ps.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${perfProj===p?'selected':''}>${p}</option>`).join('');}
 
   // Filter rows
+  // Members only see their own performance
+  const memberSel=document.getElementById('perf-member');
+  const perfMember=!isAdmin()?currentUser.name:(memberSel?.value||'ALL');
+  if(memberSel&&!isAdmin()){memberSel.style.display='none';}
+  else if(memberSel){
+    const curMVal=memberSel.value;
+    memberSel.innerHTML='<option value="ALL">Tất cả nhân viên</option>'+teamMembers.map(m=>`<option value="${m}" ${curMVal===m?'selected':''}>${m}</option>`).join('');
+  }
+
   let rows=allRows.filter(r=>{
     if(perfProj!=='ALL'&&r.sheet!==perfProj) return false;
     if(perfMonth!=='ALL'){const m=(r.data[2]||'').match(/\[T(\d+)\]/);if(!m||m[1]!==perfMonth) return false;}
+    if(perfMember!=='ALL'&&(r.data[3]||'').trim()!==perfMember) return false;
     return true;
   });
 
@@ -1395,7 +1476,7 @@ function renderPerf(){
     if(s==='Đang đợi duyệt'||s==='Khách đã duyệt') stats[person].waiting++;
   });
 
-  const members=teamMembers.filter(m=>stats[m]&&stats[m].total>0);
+  const members=(perfMember!=='ALL'?[perfMember]:teamMembers).filter(m=>stats[m]&&stats[m].total>0);
   if(!members.length){
     document.getElementById('perf-content').innerHTML='<div class="loading-row">Không có dữ liệu cho bộ lọc này</div>';return;
   }
@@ -1491,7 +1572,394 @@ function renderPerf(){
     </table>
   </div>`;
 
-  document.getElementById('perf-content').innerHTML=html;
+  // If specific member selected: also show their task list
+  let taskListHtml = '';
+  if(perfMember !== 'ALL'){
+    const memberTasks = allRows.filter(r=>{
+      const personMatch = (r.data[3]||'').trim() === perfMember;
+      const monthMatch = perfMonth==='ALL' || (r.data[2]||'').includes(`[T${perfMonth}]`);
+      const projMatch = perfProj==='ALL' || r.sheet===perfProj;
+      return personMatch && monthMatch && projMatch;
+    });
+    if(memberTasks.length){
+      const taskRows = memberTasks.map(r=>{
+        const ds=dlSt(r);
+        const sc=STATUS_CFG[r.data[6]||'Mới']||STATUS_CFG['Mới'];
+        const rawName=(r.data[2]||'').replace(/^\s*↳\s*/,'').trim();
+        const dlStr=r.data[4]||'';
+        const badge=ds==='overdue'?`<span class="dl-late">⚠ Trễ</span>`:ds==='soon'?`<span class="dl-soon">🔔 Sắp</span>`:'';
+        const pc=PROJ_COLORS[r.sheet]||'#ccc';
+        return `<tr style="border-bottom:1px solid #F0EEE8${r.isSubtask?';background:#F8F7FF':''}">
+          <td style="padding:9px 14px">
+            ${r.isSubtask?'<span style="color:#ccc;margin-right:4px">↳</span>':''}
+            <span style="font-size:13px;font-weight:${r.isSubtask?'400':'500'};color:${r.isSubtask?'#777':'#1a1a1a'}">${rawName}</span>
+          </td>
+          <td style="padding:9px 14px"><span style="font-size:11px;font-weight:700;color:${PROJ_TEXT[r.sheet]||'#333'};background:${pc}44;padding:2px 8px;border-radius:5px">${r.sheet}</span></td>
+          <td style="padding:9px 14px"><span style="font-size:11px;color:var(--muted)">${r.data[1]||''}</span></td>
+          <td style="padding:9px 14px">${badge} <span style="font-size:12px;color:var(--muted)">${dlStr}</span></td>
+          <td style="padding:9px 14px"><span class="pill-label" style="background:${sc.bg};color:${sc.color};font-size:11px;padding:3px 8px;border-radius:6px"><span style="color:${sc.dot}">${sc.icon}</span> ${r.data[6]||'Mới'}</span></td>
+        </tr>`;
+      }).join('');
+      taskListHtml = `<div style="margin-top:20px;background:#fff;border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFAF8">
+          Danh sách task của ${perfMember} · ${memberTasks.length} tasks
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#F7F6F2">
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Tên task</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);width:130px">Dự án</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);width:110px">Nhóm</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);width:120px">Deadline</th>
+            <th style="padding:9px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);width:150px">Trạng thái</th>
+          </tr></thead>
+          <tbody>${taskRows}</tbody>
+        </table>
+      </div>`;
+    }
+  }
+
+  document.getElementById('perf-content').innerHTML=html+taskListHtml;
+}
+
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+let currentUser=null; // {name, username, role, position}
+
+// Load users from USERS sheet
+async function loadUsers(){
+  try{
+    const d=await apiGet('USERS!A3:G20');
+    return (d.values||[]).filter(r=>r[0]&&r[1]&&r[2]).map(r=>({
+      name:r[0]||'',username:(r[1]||'').toLowerCase().trim(),
+      password:r[2]||'',role:(r[3]||'member').toLowerCase(),
+      position:r[4]||'',active:(r[5]||'active')==='active'
+    }));
+  }catch(e){console.error('Không load được USERS sheet:',e);return [];}
+}
+
+async function doLogin(){
+  const uInput=document.getElementById('login-user').value.trim().toLowerCase();
+  const pInput=document.getElementById('login-pass').value;
+  const btn=document.getElementById('login-btn');
+  const err=document.getElementById('login-err');
+  if(!uInput||!pInput){err.textContent='Vui lòng nhập đầy đủ thông tin';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Đang kiểm tra...';err.style.display='none';
+  try{
+    const users=await loadUsers();
+    const found=users.find(u=>u.username===uInput&&u.password===pInput&&u.active);
+    if(found){
+      currentUser=found;
+      sessionStorage.setItem('nams_user',JSON.stringify(found));
+      onLoginSuccess();
+    }else{
+      err.textContent='Sai tên đăng nhập hoặc mật khẩu';
+      err.style.display='block';
+      document.getElementById('login-pass').value='';
+    }
+  }catch(e){
+    err.textContent='Lỗi kết nối: '+e.message;err.style.display='block';
+  }finally{btn.disabled=false;btn.textContent='Đăng nhập';}
+}
+
+function onLoginSuccess(){
+  // Hide login, show app
+  document.getElementById('login-overlay').style.display='none';
+  // Update header badge
+  const initials=currentUser.name.replace(/^(MR|MS)\s+/i,'').slice(0,2).toUpperCase();
+  document.getElementById('user-avatar').textContent=initials;
+  document.getElementById('user-name-display').textContent=currentUser.name;
+  document.getElementById('user-role-display').textContent=currentUser.role==='admin'?'Admin · '+currentUser.position:currentUser.position;
+  document.getElementById('user-badge').style.display='flex';
+  // Apply permissions
+  applyPermissions();
+  // Load data
+  loadAll();
+}
+
+function applyPermissions(){
+  const isAdmin=currentUser?.role==='admin';
+  // Hide admin-only elements for members
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'':'none');
+  // Show member-only elements
+  document.querySelectorAll('.member-only').forEach(el=>el.style.display=!isAdmin?'':'none');
+}
+
+function doLogout(){
+  if(!confirm('Đăng xuất?')) return;
+  currentUser=null;
+  sessionStorage.removeItem('nams_user');
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('user-badge').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').style.display='none';
+  allRows=[];sheetNames=[];
+  document.getElementById('task-table').innerHTML='<tr><td colspan="9" class="loading-row">Đăng nhập để xem dữ liệu</td></tr>';
+}
+
+function togglePass(){
+  const inp=document.getElementById('login-pass');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+// Check session on page load
+function checkSession(){
+  const saved=sessionStorage.getItem('nams_user');
+  if(saved){
+    try{currentUser=JSON.parse(saved);onLoginSuccess();return true;}catch(e){}
+  }
+  return false;
+}
+
+// Permission helpers
+function canEdit(taskPersonName){
+  if(!currentUser) return false;
+  if(currentUser.role==='admin') return true;
+  return (taskPersonName||'').trim().toLowerCase()===currentUser.name.trim().toLowerCase();
+}
+function isAdmin(){return currentUser?.role==='admin';}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// USER MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+let usersCache = [];
+
+async function renderUsersTable(){
+  document.getElementById('users-table-wrap').innerHTML = '<div class="loading-row"><span class="spinner"></span>Đang tải...</div>';
+  try{
+    usersCache = await loadUsers();
+    if(!usersCache.length){
+      document.getElementById('users-table-wrap').innerHTML = '<div class="loading-row">Chưa có user nào trong sheet USERS</div>';
+      return;
+    }
+    const rows = usersCache.map((u,i) => {
+      const isActive = u.active;
+      const roleColor = u.role==='admin' ? '#4A3A8A' : '#1A6B5A';
+      const roleBg = u.role==='admin' ? '#ECD4FF' : '#AFF8DB';
+      const statusColor = isActive ? '#1A6B3A' : '#B83030';
+      const statusBg = isActive ? '#BFFCC6' : '#FFB5E8';
+      const avatarColors = ['#B28DFF','#AFF8DB','#FFB5E8','#ACE7FF','#BFFCC6','#FFC9DE','#AFCBFF','#FFFFD1'];
+      const avatarBg = avatarColors[i % avatarColors.length];
+      const initials = u.name.replace(/^(MR|MS)\s+/i,'').slice(0,2).toUpperCase();
+      // Disable edit/delete for current user (self)
+      const isSelf = currentUser?.username === u.username;
+      return `<tr style="border-bottom:1px solid #F0EEE8${isSelf?';background:#FFFBF0':''}">
+        <td style="padding:11px 14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#333;flex-shrink:0">${initials}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#1a1a1a">${u.name} ${isSelf?'<span style="font-size:10px;color:#B87A2A;background:#FFF5BA;padding:1px 6px;border-radius:4px">Bạn</span>':''}</div>
+              <div style="font-size:11px;color:var(--muted)">${u.position||'—'}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:11px 14px">
+          <code style="background:#F5F4F0;padding:3px 8px;border-radius:5px;font-size:12px;color:#4A3A8A">${u.username}</code>
+        </td>
+        <td style="padding:11px 14px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <code style="background:#F5F4F0;padding:3px 8px;border-radius:5px;font-size:12px;color:#555;letter-spacing:.05em">${u.password}</code>
+            <button onclick="copyToClip('${u.password}')" style="border:none;background:none;cursor:pointer;font-size:13px;color:#bbb" title="Copy">📋</button>
+          </div>
+        </td>
+        <td style="padding:11px 14px">
+          <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:${roleBg};color:${roleColor}">${u.role==='admin'?'⭐ Admin':'Member'}</span>
+        </td>
+        <td style="padding:11px 14px">
+          <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:${statusBg};color:${statusColor}">${isActive?'✅ Active':'🔒 Inactive'}</span>
+        </td>
+        <td style="padding:11px 14px">
+          <div style="display:flex;gap:6px">
+            <button class="icon-btn" onclick="openEditUserModal(${i})" title="Sửa thông tin" style="font-size:12px">✏️ Sửa</button>
+            <button class="icon-btn" onclick="toggleUserStatus(${i})" title="${isActive?'Khóa tài khoản':'Mở khóa'}"
+              style="font-size:12px;${isActive?'border-color:#F5C0C0;color:#C04040':'border-color:#B0DCC5;color:#1A6B3A'}">
+              ${isActive?'🔒 Khóa':'🔓 Mở'}
+            </button>
+            ${!isSelf?`<button class="icon-btn" onclick="resetPassword(${i})" title="Reset password" style="font-size:12px;border-color:#D5AAFF;color:#4A3A8A">🔑 Reset</button>`:''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('users-table-wrap').innerHTML = `
+      <div style="margin-bottom:10px;font-size:12px;color:var(--muted)">${usersCache.length} tài khoản · ${usersCache.filter(u=>u.active).length} đang active · ${usersCache.filter(u=>u.role==='admin').length} admin</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;table-layout:auto">
+          <thead><tr style="background:#FAFAF8">
+            <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Nhân viên</th>
+            <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Username</th>
+            <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Password</th>
+            <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Role</th>
+            <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Trạng thái</th>
+            <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Thao tác</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }catch(e){
+    document.getElementById('users-table-wrap').innerHTML = `<div class="loading-row" style="color:#B83030">Lỗi: ${e.message}</div>`;
+  }
+}
+
+// ── FIND USER ROW IN SHEETS ──────────────────────────────────────────────────
+async function getUserSheetRow(username){
+  const d = await apiGet('USERS!B3:B30');
+  const rows = d.values||[];
+  for(let i=0;i<rows.length;i++){
+    if((rows[i][0]||'').toLowerCase()===username.toLowerCase()) return i+3;
+  }
+  return -1;
+}
+
+// ── OPEN ADD MODAL ────────────────────────────────────────────────────────────
+function openAddUserModal(){
+  document.getElementById('user-modal-title').textContent = 'Thêm tài khoản mới';
+  document.getElementById('um-edit-row').value = '';
+  document.getElementById('um-name').value = '';
+  document.getElementById('um-username').value = '';
+  document.getElementById('um-password').value = '';
+  document.getElementById('um-role').value = 'member';
+  document.getElementById('um-position').value = '';
+  document.getElementById('um-status').value = 'active';
+  document.getElementById('um-note').value = '';
+  document.getElementById('user-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('um-name').focus(),100);
+}
+
+// ── OPEN EDIT MODAL ───────────────────────────────────────────────────────────
+function openEditUserModal(idx){
+  const u = usersCache[idx];
+  if(!u) return;
+  document.getElementById('user-modal-title').textContent = 'Sửa tài khoản: ' + u.name;
+  document.getElementById('um-edit-row').value = u.username;
+  document.getElementById('um-name').value = u.name;
+  document.getElementById('um-username').value = u.username;
+  document.getElementById('um-password').value = u.password;
+  document.getElementById('um-role').value = u.role;
+  document.getElementById('um-position').value = u.position||'';
+  document.getElementById('um-status').value = u.active?'active':'inactive';
+  document.getElementById('um-note').value = '';
+  document.getElementById('user-modal').classList.add('open');
+}
+
+function closeUserModal(){ document.getElementById('user-modal').classList.remove('open'); }
+
+// ── SAVE USER (Add or Edit) ───────────────────────────────────────────────────
+async function saveUser(){
+  const editUsername = document.getElementById('um-edit-row').value;
+  const name = document.getElementById('um-name').value.trim().toUpperCase();
+  const username = document.getElementById('um-username').value.trim().toLowerCase();
+  const password = document.getElementById('um-password').value.trim();
+  const role = document.getElementById('um-role').value;
+  const position = document.getElementById('um-position').value.trim();
+  const status = document.getElementById('um-status').value;
+  const note = document.getElementById('um-note').value.trim();
+
+  if(!name||!username||!password){ alert('Vui lòng điền đủ Họ tên, Username và Password'); return; }
+
+  const btn = document.querySelector('#user-modal .btn-save-modal');
+  btn.disabled=true; btn.textContent='Đang lưu...';
+
+  try{
+    const rowData = [[name, username, password, role, position, status, note]];
+    if(editUsername){
+      // Edit existing
+      const rowNum = await getUserSheetRow(editUsername);
+      if(rowNum<0) throw new Error('Không tìm thấy user trong sheet');
+      await apiPut(`USERS!A${rowNum}:G${rowNum}`, rowData);
+      showToast('users-toast', `Đã cập nhật tài khoản: ${name}`, true);
+    } else {
+      // Check duplicate username
+      const existing = usersCache.find(u=>u.username===username);
+      if(existing){ alert('Username "'+username+'" đã tồn tại!'); btn.disabled=false; btn.textContent='Lưu tài khoản'; return; }
+      // Add new row
+      await apiPost('USERS', rowData);
+      showToast('users-toast', `Đã thêm tài khoản: ${name} (${username})`, true);
+      // Also add to teamMembers if not exists
+      if(!teamMembers.includes(name)){
+        teamMembers.push(name);
+        await saveTeam();
+      }
+    }
+    closeUserModal();
+    await renderUsersTable();
+  }catch(e){ showToast('users-toast', 'Lỗi: '+e.message, false); }
+  finally{ btn.disabled=false; btn.textContent='Lưu tài khoản'; }
+}
+
+// ── TOGGLE STATUS (Lock/Unlock) ───────────────────────────────────────────────
+async function toggleUserStatus(idx){
+  const u = usersCache[idx];
+  if(!u) return;
+  const newStatus = u.active ? 'inactive' : 'active';
+  const action = u.active ? 'Khóa' : 'Mở khóa';
+
+  const modal = document.getElementById('user-confirm-modal');
+  document.getElementById('ucm-title').textContent = action + ' tài khoản';
+  document.getElementById('ucm-text').innerHTML = `${action} tài khoản của <strong>${u.name}</strong>?<br><span style="font-size:12px;color:var(--muted)">${u.active?'Người dùng sẽ không thể đăng nhập cho đến khi mở khóa.':'Người dùng có thể đăng nhập trở lại.'}</span>`;
+  modal.classList.add('open');
+
+  const confirmBtn = document.getElementById('ucm-confirm-btn');
+  confirmBtn.style.background = u.active ? '#E07070' : '#4A9B7F';
+  confirmBtn.textContent = action;
+  confirmBtn.onclick = async () => {
+    modal.classList.remove('open');
+    try{
+      const rowNum = await getUserSheetRow(u.username);
+      if(rowNum<0) throw new Error('Không tìm thấy user');
+      await apiPut(`USERS!F${rowNum}`, [[newStatus]]);
+      showToast('users-toast', `Đã ${action.toLowerCase()} tài khoản: ${u.name}`, true);
+      await renderUsersTable();
+    }catch(e){ showToast('users-toast','Lỗi: '+e.message,false); }
+  };
+}
+
+// ── RESET PASSWORD ────────────────────────────────────────────────────────────
+async function resetPassword(idx){
+  const u = usersCache[idx];
+  if(!u) return;
+  const firstName = u.name.replace(/^(MR|MS)\s+/i,'').split(' ')[0];
+  const newPass = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase() + '@' + new Date().getFullYear();
+
+  const modal = document.getElementById('user-confirm-modal');
+  document.getElementById('ucm-title').textContent = 'Reset mật khẩu';
+  document.getElementById('ucm-text').innerHTML = `Reset mật khẩu của <strong>${u.name}</strong>?<br><br>Mật khẩu mới sẽ là:<br><code style="background:#ECD4FF;padding:4px 10px;border-radius:6px;font-size:14px;font-weight:700;color:#4A3A8A;display:inline-block;margin-top:4px">${newPass}</code>`;
+  modal.classList.add('open');
+
+  const confirmBtn = document.getElementById('ucm-confirm-btn');
+  confirmBtn.style.background = '#B28DFF';
+  confirmBtn.textContent = 'Reset password';
+  confirmBtn.onclick = async () => {
+    modal.classList.remove('open');
+    try{
+      const rowNum = await getUserSheetRow(u.username);
+      if(rowNum<0) throw new Error('Không tìm thấy user');
+      await apiPut(`USERS!C${rowNum}`, [[newPass]]);
+      showToast('users-toast', `Đã reset pass ${u.name} → ${newPass}`, true);
+      await renderUsersTable();
+    }catch(e){ showToast('users-toast','Lỗi: '+e.message,false); }
+  };
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function genPass(){
+  const nameInput = document.getElementById('um-name').value.trim();
+  const firstName = nameInput.replace(/^(MR|MS)\s+/i,'').split(' ')[0];
+  const base = firstName ? (firstName.charAt(0).toUpperCase()+firstName.slice(1).toLowerCase()) : 'User';
+  document.getElementById('um-password').value = base+'@'+new Date().getFullYear();
+}
+
+function copyToClip(text){
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast('users-toast','Đã copy: '+text,true);
+  }).catch(()=>{
+    // fallback
+    const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);
+    showToast('users-toast','Đã copy: '+text,true);
+  });
 }
 
 
@@ -1517,7 +1985,87 @@ function autoResizeNote(el){
   el.style.height=Math.min(el.scrollHeight,120)+'px';
 }
 
-loadAll();
+// Start: check session first, loadAll called inside onLoginSuccess
+if(!checkSession()){
+  document.getElementById("login-overlay").style.display="flex";
+}
 </script>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">N</div>
+    <div class="login-title">Nam's Projects</div>
+    <div class="login-sub">Đăng nhập để tiếp tục</div>
+    <div class="login-field">
+      <label class="login-label">Tên đăng nhập</label>
+      <input class="login-input" type="text" id="login-user" placeholder="VD: hung, tai, nhi..." autocomplete="username" onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Mật khẩu</label>
+      <div style="position:relative">
+        <input class="login-input" type="password" id="login-pass" placeholder="Nhập mật khẩu..." autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
+        <span onclick="togglePass()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;color:#bbb" id="pass-eye">👁</span>
+      </div>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Đăng nhập</button>
+    <div class="login-err" id="login-err">Sai tên đăng nhập hoặc mật khẩu</div>
+    <div class="login-footer">Nam's Projects · Internal Tool</div>
+  </div>
+</div>
+
+
+<!-- ADD/EDIT USER MODAL -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal" style="width:440px">
+    <div class="modal-title" id="user-modal-title">Thêm tài khoản mới</div>
+    <input type="hidden" id="um-edit-row">
+    <div class="form-grid-2">
+      <div><div class="modal-label">Họ tên *</div><input type="text" id="um-name" placeholder="VD: MR NAM"></div>
+      <div><div class="modal-label">Username *</div><input type="text" id="um-username" placeholder="VD: nam"></div>
+    </div>
+    <div class="form-grid-2">
+      <div><div class="modal-label">Password *</div>
+        <div style="position:relative">
+          <input type="text" id="um-password" placeholder="VD: Nam@2026">
+          <button onclick="genPass()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--p-purple4);border:none;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;color:#4A3A8A;font-weight:600">Tạo pass</button>
+        </div>
+      </div>
+      <div><div class="modal-label">Role</div>
+        <select id="um-role">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div><div class="modal-label">Chức vụ</div><input type="text" id="um-position" placeholder="VD: Content, Designer..."></div>
+      <div><div class="modal-label">Trạng thái</div>
+        <select id="um-status">
+          <option value="active">✅ Active</option>
+          <option value="inactive">🔒 Inactive (khóa)</option>
+        </select>
+      </div>
+    </div>
+    <div><div class="modal-label">Ghi chú</div><input type="text" id="um-note" placeholder="Ghi chú..."></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-cancel" onclick="closeUserModal()">Huỷ</button>
+      <button class="btn-save-modal" onclick="saveUser()">Lưu tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM TOGGLE STATUS MODAL -->
+<div class="modal-overlay" id="user-confirm-modal">
+  <div class="modal" style="width:360px">
+    <div class="modal-title" id="ucm-title">Xác nhận</div>
+    <p id="ucm-text" style="font-size:13px;color:#555;margin-bottom:14px;line-height:1.6"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('user-confirm-modal').classList.remove('open')">Huỷ</button>
+      <button class="btn-save-modal" id="ucm-confirm-btn">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
