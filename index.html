@@ -355,6 +355,9 @@ textarea{height:70px;resize:vertical}
             <option>Mới</option><option>Đang thực hiện</option><option>Đang đợi duyệt</option>
             <option>Khách đã duyệt</option><option>Đã gửi khách</option><option>Hoàn thành</option><option>Đã AIR</option>
           </select>
+          <select id="mf" onchange="applyF()" style="padding:5px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto;color:#555" id="member-filter-sel">
+            <option value="">Tất cả nhân viên</option>
+          </select>
         </div>
         <span style="font-size:12px;color:var(--faint)">Click tên task để sửa · Thay đổi ô → tự lưu</span>
       </div>
@@ -616,7 +619,7 @@ const PRI_CFG={
 
 let tok=null,tokExp=0,allRows=[],sheetNames=[],projInfoData={};
 let teamMembers=['MR TÀI','MS DIỆP','MR HUY','MR HẢI ANH','MR TUYÊN','MS NHI','MR HƯNG','MR SƠN'];
-let activeProj='ALL',activeGantt='',subParentIdx=null,deleteTarget=null,gf='',sf='';
+let activeProj='ALL',activeGantt='',subParentIdx=null,deleteTarget=null,gf='',sf='',mf='';
 let activeMonth='ALL',ganttPhases=[],zl=1,asSave={},dragSrcIdx=null;
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -672,8 +675,9 @@ async function loadAll(){
     const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} rows`;
   }catch(e){
-    document.getElementById('task-table').innerHTML=`<tr><td colspan="9" class="loading-row" style="color:#B83030">Lỗi: ${e.message}</td></tr>`;
-    document.getElementById('sync-info').textContent='Lỗi kết nối';
+    document.getElementById('task-table').innerHTML=`<tr><td colspan="9" class="loading-row" style="color:#B83030">Lỗi kết nối: ${e.message} <button onclick="loadAll()" style="margin-left:8px;padding:4px 10px;background:var(--slate);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">Thử lại</button></td></tr>`;
+    document.getElementById('sync-info').textContent='Lỗi — nhấn Sync để thử lại';
+    // KHÔNG show login screen khi lỗi load data
   }finally{btn.disabled=false;btn.textContent='↻ Sync';}
 }
 
@@ -738,6 +742,9 @@ function ring(pct,color,bg){
 }
 function renderProjCards(){
   const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+  // Auto-generate colors for new projects not in PROJ_COLORS
+  const autoColors=['#5B7FA6','#4A9B7F','#7A6BAA','#8A6B9A','#7A8A6B','#6B8A9A','#7A8080','#5A7060','#6B7A5A','#8A7A6B'];
+  projs.forEach((p,i)=>{if(!PROJ_COLORS[p]) PROJ_COLORS[p]=autoColors[i%autoColors.length];if(!PROJ_TEXT[p]) PROJ_TEXT[p]='#2A3A4A';});
   // All card
   const tAll=allRows.filter(r=>!r.isSubtask&&rowMatchesMonth(r)).length;
   const dAll=allRows.filter(r=>!r.isSubtask&&isDone(r)&&rowMatchesMonth(r)).length;
@@ -776,12 +783,21 @@ function renderProjCards(){
   document.getElementById('proj-cards').innerHTML=allCard+cards.join('');
 }
 function filterProj(p){activeProj=p;renderProjCards();renderTable();document.getElementById('table-title').textContent=p==='ALL'?'Tất cả công việc':p;}
-function applyF(){gf=document.getElementById('gf').value;sf=document.getElementById('sf').value;renderTable();}
+function applyF(){
+  gf=document.getElementById('gf').value;
+  sf=document.getElementById('sf').value;
+  mf=document.getElementById('mf')?.value||'';
+  renderTable();
+}
 function getF(){
   let f=activeProj==='ALL'?[...allRows]:allRows.filter(r=>r.sheet===activeProj);
   if(gf) f=f.filter(r=>r.isSubtask||(r.data[1]||'').includes(gf));
   if(sf) f=f.filter(r=>(r.data[6]||'')===sf);
   if(activeMonth!=='ALL') f=f.filter(r=>rowMatchesMonth(r)||(r.isSubtask&&rowMatchesMonth(r)));
+  // Member permission: only see own tasks
+  if(!isAdmin()&&currentUser) f=f.filter(r=>r.isSubtask||(r.data[3]||'').trim()===currentUser.name);
+  // Admin member filter
+  if(isAdmin()&&mf) f=f.filter(r=>r.isSubtask||(r.data[3]||'').trim()===mf);
   return f;
 }
 
@@ -805,6 +821,16 @@ function updatePriPill(sel){
 
 // ── TABLE ─────────────────────────────────────────────────────────────────────
 function renderTable(){
+  // Populate member filter dropdown (admin only)
+  const mfSel=document.getElementById('mf');
+  if(mfSel){
+    if(!isAdmin()){
+      mfSel.style.display='none';
+    } else {
+      const curMf=mfSel.value;
+      mfSel.innerHTML='<option value="">Tất cả nhân viên</option>'+teamMembers.map(m=>`<option value="${m}" ${curMf===m?'selected':''}>${m}</option>`).join('');
+    }
+  }
   const filtered=getF();
   if(!filtered.length){document.getElementById('task-table').innerHTML='<tr><td colspan="9" class="loading-row">Không có dữ liệu</td></tr>';return;}
   const rows=[];let lastGroup='';
@@ -1751,7 +1777,7 @@ async function doLogin(){
 }
 
 function onLoginSuccess(){
-  // Hide login, show app
+  // Hide login, show app (may already be hidden by checkSession)
   document.getElementById('login-overlay').style.display='none';
   // Update header badge
   const initials=currentUser.name.replace(/^(MR|MS)\s+/i,'').slice(0,2).toUpperCase();
@@ -1795,7 +1821,16 @@ function togglePass(){
 function checkSession(){
   const saved=localStorage.getItem('nams_user');
   if(saved){
-    try{currentUser=JSON.parse(saved);onLoginSuccess();return true;}catch(e){}
+    try{
+      const u=JSON.parse(saved);
+      if(u&&u.username&&u.name){
+        currentUser=u;
+        // Hide login immediately before any async call
+        document.getElementById('login-overlay').style.display='none';
+        onLoginSuccess();
+        return true;
+      }
+    }catch(e){localStorage.removeItem('nams_user');}
   }
   return false;
 }
