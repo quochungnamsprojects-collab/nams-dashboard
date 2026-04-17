@@ -1819,20 +1819,22 @@ function togglePass(){
 
 // Check session on page load
 function checkSession(){
-  const saved=localStorage.getItem('nams_user');
-  if(saved){
-    try{
-      const u=JSON.parse(saved);
-      if(u&&u.username&&u.name){
-        currentUser=u;
-        // Hide login immediately before any async call
-        document.getElementById('login-overlay').style.display='none';
-        onLoginSuccess();
-        return true;
-      }
-    }catch(e){localStorage.removeItem('nams_user');}
+  try{
+    const saved=localStorage.getItem('nams_user');
+    if(!saved) return false;
+    const u=JSON.parse(saved);
+    if(!u||!u.username||!u.name) return false;
+    currentUser=u;
+    // DOM is ready at this point (called from DOMContentLoaded)
+    const overlay=document.getElementById('login-overlay');
+    if(overlay) overlay.style.display='none';
+    onLoginSuccess();
+    return true;
+  }catch(e){
+    // Parse error or missing element — clear bad data
+    try{localStorage.removeItem('nams_user');}catch(_){}
+    return false;
   }
-  return false;
 }
 
 // Permission helpers
@@ -2110,10 +2112,12 @@ function autoResizeNote(el){
   el.style.height=Math.min(el.scrollHeight,120)+'px';
 }
 
-// Start: check session first, loadAll called inside onLoginSuccess
-if(!checkSession()){
-  document.getElementById("login-overlay").style.display="flex";
-}
+// Start: wait for DOM then check session
+document.addEventListener('DOMContentLoaded', function(){
+  if(!checkSession()){
+    document.getElementById("login-overlay").style.display="flex";
+  }
+});
 </script>
 
 <!-- LOGIN OVERLAY -->
