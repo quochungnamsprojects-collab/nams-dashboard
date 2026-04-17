@@ -125,9 +125,9 @@ tr.row-subtask:hover td{background:#F0EEFF}
 /* INLINE CONTROLS */
 .inline-sel{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:13px;color:var(--text);background:transparent;cursor:pointer;width:100%;transition:border .15s}
 .inline-sel:hover,.inline-sel:focus{border-color:var(--border);background:#fff;outline:none}
-.inline-date{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:108px;transition:border .15s}
-.inline-date:hover,.inline-date:focus{border-color:var(--border);background:#fff;outline:none}
-.inline-note{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:100%;transition:border .15s}
+.inline-date{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:115px;transition:border .15s;cursor:pointer}
+.inline-date:hover,.inline-date:focus{border-color:var(--green);background:#fff;outline:none;box-shadow:0 0 0 2px rgba(74,155,127,.1)}
+.inline-note{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:100%;transition:border .15s;resize:none;min-height:28px;overflow:hidden;line-height:1.4;display:block;font-family:inherit}
 .inline-note:hover,.inline-note:focus{border-color:var(--border);background:#fff;outline:none}
 .dl-late{background:var(--p-pink);color:#8B0000;font-size:11px;padding:2px 6px;border-radius:5px;font-weight:700;display:inline-block;margin-bottom:2px}
 .dl-soon{background:var(--p-orange);color:#7A5000;font-size:11px;padding:2px 6px;border-radius:5px;font-weight:700;display:inline-block;margin-bottom:2px}
@@ -288,11 +288,12 @@ textarea{height:70px;resize:vertical}
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
-    <button class="tab tab-today" onclick="switchTab('today')">📌 Hôm nay</button>
+    <button class="tab tab-today" onclick="switchTab('today')">📋 Việc cần làm</button>
     <button class="tab" onclick="switchTab('info')">Thông tin dự án</button>
     <button class="tab" onclick="switchTab('gantt')">Gantt Chart</button>
     <button class="tab" onclick="switchTab('clone')">Tháng mới</button>
-    <button class="tab" onclick="switchTab('team')">Nhân sự</button>
+    <button class="tab" onclick="switchTab('perf')">📊 Hiệu suất</button>
+    <button class="tab" onclick="switchTab('team')">👥 Nhân sự</button>
     <button class="tab" onclick="switchTab('add')">+ Thêm task</button>
   </div>
 
@@ -427,6 +428,24 @@ textarea{height:70px;resize:vertical}
     </div>
   </div>
 
+  <!-- PERFORMANCE -->
+  <div id="tab-perf" class="section">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="card-title" style="margin:0">Hiệu suất nhân viên</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="perf-month" onchange="renderPerf()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
+            <option value="ALL">Tất cả tháng</option>
+          </select>
+          <select id="perf-proj" onchange="renderPerf()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
+            <option value="ALL">Tất cả dự án</option>
+          </select>
+        </div>
+      </div>
+      <div id="perf-content"><div class="loading-row">Nhấn Sync để tải dữ liệu</div></div>
+    </div>
+  </div>
+
   <!-- TEAM -->
   <div id="tab-team" class="section">
     <div class="card" style="max-width:580px">
@@ -454,7 +473,7 @@ textarea{height:70px;resize:vertical}
       </div>
       <div class="form-grid">
         <div><div class="flabel">Người phụ trách</div><select id="a-person"></select></div>
-        <div><div class="flabel">Deadline</div><input type="text" id="a-deadline" placeholder="VD: 28/04/2026"></div>
+        <div><div class="flabel">Deadline</div><input type="date" id="a-deadline"></div>
         <div><div class="flabel">Ưu tiên</div>
           <select id="a-priority"><option>P1 - ƯU TIÊN</option><option>P2 - QUAN TRỌNG</option><option selected>P3 - BÌNH THƯỜNG</option></select>
         </div>
@@ -474,7 +493,7 @@ textarea{height:70px;resize:vertical}
     <div class="modal-row"><div class="modal-label">Tên subtask *</div><input type="text" id="sm-name" placeholder="VD: Edit video 1..."></div>
     <div class="modal-row"><div class="modal-label">Nhóm</div><input type="text" id="sm-group" readonly style="background:#F7F6F2;color:#999;border-color:#F0EEE8"></div>
     <div class="modal-row"><div class="modal-label">Người làm</div><select id="sm-person"></select></div>
-    <div class="modal-row"><div class="modal-label">Deadline</div><input type="text" id="sm-deadline" placeholder="ngày 28 hoặc 28/04/2026"></div>
+    <div class="modal-row"><div class="modal-label">Deadline</div><input type="date" id="sm-deadline"></div>
     <div class="modal-row"><div class="modal-label">Ghi chú</div><textarea id="sm-note" style="height:60px"></textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeSubModal()">Huỷ</button>
@@ -588,6 +607,7 @@ async function loadAll(){
       if(tm.values){const l=tm.values.map(r=>r[0]).filter(Boolean);if(l.length>0) teamMembers=l;}
     }
     updateMetrics();renderMonthPills();renderProjCards();renderTable();renderProjInfo();renderTeam();renderToday();populateSelects();
+    if(document.getElementById('tab-perf')?.classList.contains('active')) renderPerf();
     const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
     activeGantt=projs[0]||'';renderGanttFilter();buildGanttPhases();renderGantt();
     const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
@@ -631,7 +651,7 @@ function renderMonthPills(){
     `<button class="month-pill ${activeMonth===p.val?'active':''}" onclick="setMonth('${p.val}')">${p.label}</button>`
   ).join('');
 }
-function setMonth(m){activeMonth=m;renderMonthPills();renderProjCards();renderTable();}
+function setMonth(m){activeMonth=m;renderMonthPills();updateMetrics();renderProjCards();renderTable();}
 
 function rowMatchesMonth(r){
   if(activeMonth==='ALL') return true;
@@ -643,9 +663,10 @@ function rowMatchesMonth(r){
 function updateMetrics(){
   const projs=new Set(sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP')));
   document.getElementById('m-total').textContent=projs.size;
-  document.getElementById('m-late').textContent=allRows.filter(r=>!r.isSubtask&&dlSt(r)==='overdue').length;
-  document.getElementById('m-done').textContent=allRows.filter(r=>!r.isSubtask&&isDone(r)).length;
-  document.getElementById('m-tasks').textContent=allRows.filter(r=>!r.isSubtask).length;
+  const mRows=r=>!r.isSubtask&&(activeMonth==='ALL'||rowMatchesMonth(r));
+  document.getElementById('m-late').textContent=allRows.filter(r=>mRows(r)&&dlSt(r)==='overdue').length;
+  document.getElementById('m-done').textContent=allRows.filter(r=>mRows(r)&&isDone(r)).length;
+  document.getElementById('m-tasks').textContent=allRows.filter(r=>mRows(r)).length;
 }
 
 // ── PROJ CARDS ────────────────────────────────────────────────────────────────
@@ -749,10 +770,12 @@ function renderTable(){
       <span class="task-name-display" id="tn-${i}" onclick="editTaskName(${i},this)" style="${r.isSubtask?'color:#777;font-style:italic;':'font-weight:500;'}font-size:13px" title="Click để sửa">${rawName}</span>
     </div>`;
     const dlStr=d[4]||'';
+    const dlIso=toISODate(dlStr);
     let dlCell='';
-    if(ds==='overdue') dlCell=`<div><span class="dl-late">⚠ Trễ</span><br><input class="inline-date" value="${dlStr}" onchange="asDate(${i},this.value)"></div>`;
-    else if(ds==='soon') dlCell=`<div><span class="dl-soon">🔔 Sắp</span><br><input class="inline-date" value="${dlStr}" onchange="asDate(${i},this.value)"></div>`;
-    else dlCell=`<input class="inline-date" value="${dlStr}" placeholder="ngày..." onchange="asDate(${i},this.value)">`;
+    const dlInputBase=`<input type="date" class="inline-date" value="${dlIso}" onchange="asDate(${i},fromISODate(this.value))" title="${dlStr}">`;
+    if(ds==='overdue') dlCell=`<div><span class="dl-late">⚠ Trễ</span><br>${dlInputBase}</div>`;
+    else if(ds==='soon') dlCell=`<div><span class="dl-soon">🔔 Sắp</span><br>${dlInputBase}</div>`;
+    else dlCell=dlInputBase;
     const noteVal=(d[7]||'').replace(/"/g,'&quot;');
     const actions=r.isSubtask?`<button class="icon-btn red" onclick="openDel(${i})">✕</button>`
       :`<div style="display:flex;gap:3px"><button class="add-sub-btn" onclick="openSub(${i})">+Sub</button><button class="icon-btn red" onclick="openDel(${i})">✕</button></div>`;
@@ -764,7 +787,7 @@ function renderTable(){
       <td>${dlCell}</td>
       <td><div class="pri-cell-wrap">${priPill(d[5]||'P3 - BÌNH THƯỜNG')}<select class="pri-sel" id="dpr-${i}" onchange="asRow(${i});updatePriPill(this)">${prOpts}</select></div></td>
       <td><div class="status-cell-wrap">${statusPill(d[6]||'Mới')}<select class="status-sel" id="ds-${i}" onchange="asRow(${i});updateStatusPill(this)">${sOpts}</select></div></td>
-      <td><input class="inline-note" value="${noteVal}" placeholder="Ghi chú..." onchange="asNote(${i},this.value)"></td>
+      <td><textarea class="inline-note" placeholder="Ghi chú..." oninput="autoResizeNote(this);asNote(${i},this.value)" onfocus="autoResizeNote(this)">${noteVal}</textarea></td>
       <td>${actions}</td>
     </tr>`);
   });
@@ -995,15 +1018,23 @@ async function saveSubModal(){
   const parent=getF()[subParentIdx];
   const name=document.getElementById('sm-name').value.trim();
   const person=document.getElementById('sm-person').value;
-  const deadline=document.getElementById('sm-deadline').value;
+  const deadlineRaw=document.getElementById('sm-deadline').value;
+  const deadline=deadlineRaw.includes('-')?fromISODate(deadlineRaw):deadlineRaw;
   const note=document.getElementById('sm-note').value.trim();
   if(!name){alert('Vui lòng nhập tên subtask');return;}
   const btn=document.querySelector('#sub-modal .btn-save-modal');
   btn.disabled=true;btn.textContent='Đang thêm...';
+  // Optimistic: insert right after parent in allRows
+  const newRow={sheet:parent.sheet,rowNum:999999,data:[parent.sheet,parent.data[1]||'',`  ↳ ${name}`,person,deadline,parent.data[5]||'P3 - BÌNH THƯỜNG','Mới',note],isSubtask:true};
+  const parentIdx=allRows.indexOf(parent);
+  if(parentIdx>=0) allRows.splice(parentIdx+1,0,newRow);
+  else allRows.push(newRow);
+  closeSubModal();renderTable();updateMetrics();renderProjCards();
+  showToast('dash-toast',`Đã thêm subtask: ${name}`,true);
+  // Write to Sheets in background
   try{
-    await apiPost(parent.sheet,[[parent.sheet,parent.data[1]||'',`  ↳ ${name}`,person,deadline||'',parent.data[5]||'P3 - BÌNH THƯỜNG','Mới',note]]);
-    closeSubModal();showToast('dash-toast',`Đã thêm subtask: ${name}`,true);await loadAll();
-  }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
+    await apiPost(parent.sheet,[[parent.sheet,parent.data[1]||'',`  ↳ ${name}`,person,deadline,parent.data[5]||'P3 - BÌNH THƯỜNG','Mới',note]]);
+  }catch(e){showToast('dash-toast','⚠ Subtask đã thêm vào UI nhưng lỗi ghi Sheets: '+e.message,false);}
   finally{btn.disabled=false;btn.textContent='Thêm subtask';}
 }
 
@@ -1181,17 +1212,24 @@ function populateSelects(){
 async function addTask(){
   const sheet=document.getElementById('a-sheet').value,group=document.getElementById('a-group').value;
   const task=document.getElementById('a-task').value.trim(),person=document.getElementById('a-person').value;
-  const deadline=document.getElementById('a-deadline').value,priority=document.getElementById('a-priority').value;
+  const deadlineRaw=document.getElementById('a-deadline').value;
+  const deadline=deadlineRaw&&deadlineRaw.includes('-')?fromISODate(deadlineRaw):deadlineRaw;
+  const priority=document.getElementById('a-priority').value;
   const note=document.getElementById('a-note').value.trim();
   if(!sheet) return showToast('a-toast','Vui lòng chọn dự án',false);
   if(!task) return showToast('a-toast','Vui lòng nhập tên task',false);
   const btn=document.getElementById('a-btn');btn.disabled=true;btn.textContent='Đang thêm...';
+  // Optimistic: add to allRows immediately
+  const newRow={sheet,rowNum:999999,data:[sheet,group,task,person,deadline||'',priority,'Mới',note],isSubtask:false};
+  allRows.push(newRow);
+  updateMetrics();renderMonthPills();renderProjCards();renderTable();
+  showToast('a-toast',`Đã thêm: ${task}`,true);
+  ['a-task','a-note','a-deadline'].forEach(id=>document.getElementById(id).value='');
+  btn.disabled=false;btn.textContent='Thêm vào Google Sheets';
+  // Write to Sheets in background
   try{
     await apiPost(sheet,[[sheet,group,task,person,deadline||'',priority,'Mới',note]]);
-    showToast('a-toast',`Đã thêm: ${task}`,true);
-    ['a-task','a-note','a-deadline'].forEach(id=>document.getElementById(id).value='');await loadAll();
-  }catch(e){showToast('a-toast','Lỗi: '+e.message,false);}
-  finally{btn.disabled=false;btn.textContent='Thêm vào Google Sheets';}
+  }catch(e){showToast('a-toast','⚠ Task đã thêm vào UI nhưng lỗi ghi Sheets: '+e.message,false);}
 }
 
 // ── GANTT ─────────────────────────────────────────────────────────────────────
@@ -1305,11 +1343,12 @@ function renderGantt(){
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function switchTab(name){
-  const tabs=['dashboard','today','info','gantt','clone','team','add'];
+  const tabs=['dashboard','today','info','gantt','clone','perf','team','add'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(name==='today') renderToday();
+  if(name==='perf') renderPerf();
 }
 function showToast(id,msg,ok){
   const el=document.getElementById(id);
@@ -1317,6 +1356,165 @@ function showToast(id,msg,ok){
   el.className='toast '+(ok?'toast-ok':'toast-err');
   el.textContent=msg;el.style.display='block';
   if(ok) setTimeout(()=>el.style.display='none',3000);
+}
+
+
+// ── PERFORMANCE DASHBOARD ─────────────────────────────────────────────────────
+function renderPerf(){
+  const perfMonth=document.getElementById('perf-month')?.value||'ALL';
+  const perfProj=document.getElementById('perf-proj')?.value||'ALL';
+
+  // Populate month/proj selects
+  const months=[];
+  allRows.forEach(r=>{const m=(r.data[2]||'').match(/\[T(\d+)\]/);if(m&&!months.includes(m[1])) months.push(m[1]);});
+  months.sort((a,b)=>a-b);
+  const ms=document.getElementById('perf-month');
+  if(ms){ms.innerHTML='<option value="ALL">Tất cả tháng</option>'+months.map(m=>`<option value="${m}" ${perfMonth===m?'selected':''}>Tháng ${m}/2026</option>`).join('');}
+  const ps=document.getElementById('perf-proj');
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+  if(ps){ps.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${perfProj===p?'selected':''}>${p}</option>`).join('');}
+
+  // Filter rows
+  let rows=allRows.filter(r=>{
+    if(perfProj!=='ALL'&&r.sheet!==perfProj) return false;
+    if(perfMonth!=='ALL'){const m=(r.data[2]||'').match(/\[T(\d+)\]/);if(!m||m[1]!==perfMonth) return false;}
+    return true;
+  });
+
+  // Build stats per person
+  const stats={};
+  teamMembers.forEach(m=>{stats[m]={total:0,done:0,late:0,doing:0,waiting:0};});
+  rows.forEach(r=>{
+    const person=(r.data[3]||'').trim();
+    if(!person||!stats[person]) return;
+    stats[person].total++;
+    if(isDone(r)) stats[person].done++;
+    else if(dlSt(r)==='overdue') stats[person].late++;
+    const s=r.data[6]||'';
+    if(s==='Đang thực hiện') stats[person].doing++;
+    if(s==='Đang đợi duyệt'||s==='Khách đã duyệt') stats[person].waiting++;
+  });
+
+  const members=teamMembers.filter(m=>stats[m]&&stats[m].total>0);
+  if(!members.length){
+    document.getElementById('perf-content').innerHTML='<div class="loading-row">Không có dữ liệu cho bộ lọc này</div>';return;
+  }
+
+  const maxTotal=Math.max(...members.map(m=>stats[m].total),1);
+
+  const html=`
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+    ${members.map(member=>{
+      const s=stats[member];
+      const pct=s.total?Math.round(s.done/s.total*100):0;
+      const latePct=s.total?Math.round(s.late/s.total*100):0;
+      const barW=Math.round(s.total/maxTotal*100);
+      const initials=member.replace(/^(MR|MS)\s+/,'').slice(0,2).toUpperCase();
+      const avatarColor=['#B28DFF','#AFF8DB','#FFB5E8','#ACE7FF','#BFFCC6','#FFC9DE','#AFCBFF','#FFFFD1'][teamMembers.indexOf(member)%8];
+      return `<div style="background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:18px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:40px;height:40px;border-radius:12px;background:${avatarColor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#333;flex-shrink:0">${initials}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${member}</div>
+            <div style="font-size:12px;color:var(--muted)">${s.total} tasks được giao</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:800;color:${pct>=80?'#1A6B3A':pct>=50?'#7A5000':'#B83030'}">${pct}%</div>
+            <div style="font-size:10px;color:var(--muted)">hoàn thành</div>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div style="height:6px;background:#F0EEE8;border-radius:3px;margin-bottom:12px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${pct>=80?'#AFF8DB':pct>=50?'#FFFFD1':'#FFB5E8'};border-radius:3px;transition:width .4s"></div>
+        </div>
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">
+          <div style="background:#AFF8DB;border-radius:8px;padding:7px 4px">
+            <div style="font-size:16px;font-weight:700;color:#1A6B3A">${s.done}</div>
+            <div style="font-size:10px;color:#1A6B3A;font-weight:500">Xong</div>
+          </div>
+          <div style="background:#ACE7FF;border-radius:8px;padding:7px 4px">
+            <div style="font-size:16px;font-weight:700;color:#1A4A8A">${s.doing}</div>
+            <div style="font-size:10px;color:#1A4A8A;font-weight:500">Đang làm</div>
+          </div>
+          <div style="background:#FFFFD1;border-radius:8px;padding:7px 4px">
+            <div style="font-size:16px;font-weight:700;color:#7A6000">${s.waiting}</div>
+            <div style="font-size:10px;color:#7A6000;font-weight:500">Chờ duyệt</div>
+          </div>
+          <div style="background:#FFB5E8;border-radius:8px;padding:7px 4px">
+            <div style="font-size:16px;font-weight:700;color:#B83030">${s.late}</div>
+            <div style="font-size:10px;color:#B83030;font-weight:500">Trễ hạn</div>
+          </div>
+        </div>
+        ${s.late>0?`<div style="margin-top:10px;font-size:11px;color:#B83030;background:#FFB5E8;border-radius:6px;padding:5px 9px">⚠ ${s.late} task đang trễ deadline</div>`:''}
+      </div>`;
+    }).join('')}
+  </div>
+  <!-- Summary table -->
+  <div style="margin-top:20px;background:#fff;border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFAF8">Bảng xếp hạng hiệu suất</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#F7F6F2">
+        <th style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">#</th>
+        <th style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Nhân viên</th>
+        <th style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">Tổng</th>
+        <th style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">Hoàn thành</th>
+        <th style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-align:center;border-bottom:1px solid var(--border)">Trễ hạn</th>
+        <th style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">Tiến độ</th>
+      </tr></thead>
+      <tbody>
+        ${[...members].sort((a,b)=>{
+          const pa=stats[a].total?stats[a].done/stats[a].total:0;
+          const pb=stats[b].total?stats[b].done/stats[b].total:0;
+          return pb-pa;
+        }).map((m,idx)=>{
+          const s=stats[m];
+          const pct=s.total?Math.round(s.done/s.total*100):0;
+          const medal=idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
+          return `<tr style="border-bottom:1px solid #F0EEE8">
+            <td style="padding:10px 14px;font-size:13px;color:var(--muted)">${medal||idx+1}</td>
+            <td style="padding:10px 14px;font-size:13px;font-weight:600">${m}</td>
+            <td style="padding:10px 14px;font-size:13px;text-align:center">${s.total}</td>
+            <td style="padding:10px 14px;font-size:13px;text-align:center;color:#1A6B3A;font-weight:600">${s.done}</td>
+            <td style="padding:10px 14px;font-size:13px;text-align:center;color:${s.late>0?'#B83030':'var(--muted)'}${s.late>0?';font-weight:700':''}">${s.late}</td>
+            <td style="padding:10px 14px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="flex:1;height:8px;background:#F0EEE8;border-radius:4px;overflow:hidden;min-width:80px">
+                  <div style="height:100%;width:${pct}%;background:${pct>=80?'#AFF8DB':pct>=50?'#FFFFD1':'#FFB5E8'};border-radius:4px"></div>
+                </div>
+                <span style="font-size:12px;font-weight:700;color:${pct>=80?'#1A6B3A':pct>=50?'#7A5000':'#B83030'};min-width:30px">${pct}%</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  document.getElementById('perf-content').innerHTML=html;
+}
+
+
+// ── DATE HELPERS ─────────────────────────────────────────────────────────────
+// dd/mm/yyyy → yyyy-mm-dd (for <input type=date>)
+function toISODate(str){
+  if(!str) return '';
+  const p=str.split('/');
+  if(p.length===3) return `${p[2].length===2?'20'+p[2]:p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  if(str.match(/^\d{4}-\d{2}-\d{2}$/)) return str;
+  return '';
+}
+// yyyy-mm-dd → dd/mm/yyyy (for Sheets)
+function fromISODate(str){
+  if(!str) return '';
+  const p=str.split('-');
+  if(p.length===3) return `${p[2]}/${p[1]}/${p[0]}`;
+  return str;
+}
+// Auto-resize textarea
+function autoResizeNote(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
 }
 
 loadAll();
