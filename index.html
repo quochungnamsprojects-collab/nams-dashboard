@@ -7,47 +7,48 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --green:#4A9B7F;--green-dk:#2D6A4F;--green-lt:#C4FAF8;
-  --red:#E07070;--red-lt:#FFB5E8;
-  --amber:#E8B86D;--amber-lt:#FFF5BA;
-  --bg:#F4F3EF;--card:#fff;--border:#E8E6E0;--text:#1a1a1a;--muted:#777;--faint:#bbb;
-  /* Pastel palette */
-  --p-pink:#FFB5E8;--p-pink2:#FF9CEE;--p-pink3:#FFCCF9;
-  --p-purple:#B28DFF;--p-purple2:#C5A3FF;--p-purple3:#D5AAFF;--p-purple4:#ECD4FF;
-  --p-blue:#DCD3FF;--p-blue2:#A79AFF;--p-blue3:#B5B9FF;--p-blue4:#97A2FF;--p-blue5:#AFCBFF;
-  --p-teal:#AFF8DB;--p-teal2:#C4FAF8;--p-teal3:#85E3FF;--p-teal4:#ACE7FF;--p-teal5:#6EB5FF;
-  --p-green:#BFFCC6;--p-green2:#DBFFD6;--p-green3:#F3FFE3;--p-green4:#E7FFAC;--p-yellow:#FFFFD1;
-  --p-salmon:#FFC9DE;--p-coral:#FFABAB;--p-peach:#FFBEBC;--p-peach2:#FFCBC1;--p-orange:#FFF5BA;
+  --green:#4A9B7F;--green-dk:#2D6A4F;--green-lt:#E8F3EF;
+  --red:#D05050;--red-lt:#FFB5E8;
+  --amber:#C09030;--amber-lt:#FFF5BA;
+  --bg:#F0F2F5;--card:#fff;--border:#DDE1E8;--text:#1a1a1a;--muted:#6B7280;--faint:#9CA3AF;
+  /* Slate/neutral accent */
+  --slate:#5B7FA6;--slate-dk:#3D5A7A;--slate-lt:#E8EDF5;
+  --slate2:#7A9BBF;--slate3:#C5D5E8;--slate4:#EBF0F7;
+  /* Alert colors (kept warm for visibility) */
+  --p-pink:#FFB5E8;--p-coral:#FFABAB;--p-orange:#FFF5BA;
+  --p-warn:#FDECD0;--p-danger:#FDDDD8;
+  /* Neutral status colors */
+  --s-new:#E8EDF5;--s-doing:#D6E8F5;--s-wait:#EBF0F7;--s-approved:#D4EDE1;--s-sent:#E5E0F5;--s-done:#D4EDE1;--s-air:#C5D5E8;
 }
 
 /* LOGIN SCREEN */
-.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#ECD4FF 0%,#ACE7FF 50%,#AFF8DB 100%);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#E8EDF5 0%,#D6E8F5 50%,#D4EDE1 100%);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .login-box{background:#fff;border-radius:20px;padding:40px 36px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(100,80,180,.18)}
-.login-logo{width:52px;height:52px;background:linear-gradient(135deg,#B28DFF,#85E3FF);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;margin:0 auto 16px}
+.login-logo{width:52px;height:52px;background:linear-gradient(135deg,#5B7FA6,#4A9B7F);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;margin:0 auto 16px}
 .login-title{text-align:center;font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:4px}
 .login-sub{text-align:center;font-size:13px;color:#888;margin-bottom:28px}
 .login-field{margin-bottom:14px}
 .login-label{font-size:12px;font-weight:600;color:#555;margin-bottom:5px;display:block}
 .login-input{width:100%;padding:11px 14px;border:1.5px solid #E8E6E0;border-radius:10px;font-size:14px;outline:none;transition:border .15s;font-family:inherit}
-.login-input:focus{border-color:#B28DFF;box-shadow:0 0 0 3px rgba(178,141,255,.15)}
-.login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#B28DFF,#85E3FF);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:opacity .15s;letter-spacing:.02em}
+.login-input:focus{border-color:var(--slate);box-shadow:0 0 0 3px rgba(91,127,166,.15)}
+.login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#5B7FA6,#4A9B7F);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:opacity .15s;letter-spacing:.02em}
 .login-btn:hover{opacity:.9}
 .login-btn:disabled{opacity:.6;cursor:not-allowed}
 .login-err{background:#FFB5E8;color:#8B0060;border-radius:8px;padding:9px 12px;font-size:13px;margin-top:12px;display:none;font-weight:500;text-align:center}
 .login-footer{text-align:center;font-size:11px;color:#bbb;margin-top:20px}
 /* USER BADGE in header */
-.user-badge{display:flex;align-items:center;gap:8px;padding:5px 12px;background:#ECD4FF;border-radius:999px;cursor:pointer;transition:background .15s}
-.user-badge:hover{background:#D5AAFF}
-.user-avatar{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#B28DFF,#85E3FF);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
-.user-name{font-size:12px;font-weight:600;color:#4A3A8A}
-.user-role{font-size:10px;color:#7A6AAA}
+.user-badge{display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--slate4);border-radius:999px;cursor:pointer;transition:background .15s}
+.user-badge:hover{background:var(--slate3)}
+.user-avatar{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--slate),var(--green));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:var(--slate-dk)}
+.user-role{font-size:10px;color:var(--slate2)}
 
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 
 /* HEADER */
 header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--p-purple),var(--p-teal3));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--slate),var(--green));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
 .logo-text{font-size:15px;font-weight:700;color:var(--text)}
 .logo-text span{color:var(--green)}
 .logo-sub{font-size:11px;color:var(--faint)}
@@ -78,7 +79,7 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 .tabs{display:flex;gap:3px;margin-bottom:20px;background:var(--card);border-radius:12px;padding:5px;border:1px solid var(--border);width:fit-content;flex-wrap:wrap}
 .tab{padding:8px 16px;border-radius:8px;border:none;background:none;font-size:13px;color:var(--muted);cursor:pointer;font-weight:500;transition:all .15s;white-space:nowrap}
 .tab.active{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(74,155,127,.3)}
-.tab.tab-today.active{background:linear-gradient(135deg,var(--p-purple2),var(--p-teal3));color:#fff}
+.tab.tab-today.active{background:var(--slate);color:#fff}
 .tab:hover:not(.active){background:#F0EEE8;color:var(--text)}
 .section{display:none}.section.active{display:block}
 
@@ -93,8 +94,8 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 /* MONTH FILTER PILLS */
 .month-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .month-pill{padding:5px 14px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s}
-.month-pill.active{background:var(--p-purple3);color:#5040A0;border-color:var(--p-purple2)}
-.month-pill:hover:not(.active){border-color:var(--p-purple2);color:#5040A0}
+.month-pill.active{background:var(--slate3);color:var(--slate-dk);border-color:var(--slate2)}
+.month-pill:hover:not(.active){border-color:var(--slate2);color:var(--slate-dk)}
 
 /* PROJECT CARDS */
 .proj-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;margin-bottom:4px}
@@ -107,8 +108,8 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 .proj-chip{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;flex-shrink:0}
 .chip-late{background:var(--p-coral);color:#8B0000}
 .chip-warn{background:var(--p-orange);color:#7A5000}
-.chip-ok{background:var(--p-teal);color:#1A6B5A}
-.chip-all{background:var(--p-purple4);color:#4A3A8A}
+.chip-ok{background:var(--s-approved);color:#1A5A3A}
+.chip-all{background:var(--slate4);color:var(--slate-dk)}
 .proj-ring-wrap{display:flex;align-items:center;gap:12px;margin-bottom:8px}
 .proj-ring{flex-shrink:0;position:relative;width:52px;height:52px}
 .proj-ring svg{transform:rotate(-90deg)}
@@ -122,7 +123,7 @@ th{text-align:left;padding:11px 10px;border-bottom:2px solid var(--border);font-
 td{padding:8px 9px;border-bottom:1px solid #F0EEE8;font-size:13px;vertical-align:middle}
 
 /* GROUP HEADER */
-tr.row-group-hdr td{background:var(--p-purple4);font-size:11px;font-weight:700;color:#4A3A8A;text-transform:uppercase;letter-spacing:.06em;padding:6px 12px;border-bottom:1px solid #E0D8FF}
+tr.row-group-hdr td{background:var(--slate4);font-size:11px;font-weight:700;color:#3D5A7A;text-transform:uppercase;letter-spacing:.06em;padding:6px 12px;border-bottom:1px solid var(--slate3)}
 
 /* ROW STATES */
 tr.row-normal td{background:#fff}
@@ -131,10 +132,10 @@ tr.row-overdue td{background:#FFF0F5}
 tr.row-overdue:hover td{background:#FFE4EF}
 tr.row-soon td{background:#FFFBF0}
 tr.row-soon:hover td{background:#FFF5E0}
-tr.row-done td{background:#F5FFFB;opacity:.88}
+tr.row-done td{background:#F0F5F2;opacity:.88}
 tr.row-done:hover td{background:#EDFFF7;opacity:1}
-tr.row-subtask td{background:#F8F7FF;font-size:12px}
-tr.row-subtask:hover td{background:#F0EEFF}
+tr.row-subtask td{background:#F5F7FA;font-size:12px}
+tr.row-subtask:hover td{background:#EBF0F7}
 
 /* STATUS PILLS */
 .status-cell-wrap{position:relative;display:inline-block;cursor:pointer;min-width:125px}
@@ -165,7 +166,7 @@ tr.row-subtask:hover td{background:#F0EEFF}
 .icon-btn.red{border-color:var(--p-coral);color:#B83030}
 .icon-btn.red:hover{background:var(--p-coral);color:#fff}
 .add-sub-btn{padding:4px 9px;border:1.5px dashed var(--green);border-radius:6px;font-size:11px;cursor:pointer;background:transparent;color:var(--green);transition:all .15s;font-weight:600}
-.add-sub-btn:hover{background:var(--p-teal);color:#1A6B5A;border-style:solid}
+.add-sub-btn:hover{background:var(--green-lt);color:var(--green-dk);border-style:solid}
 
 /* DRAG */
 .drag-handle{cursor:grab;color:#CCC;font-size:15px;padding:2px 5px;user-select:none;display:inline-block;line-height:1;border-radius:4px;transition:all .15s}
@@ -239,7 +240,7 @@ textarea{height:70px;resize:vertical}
 
 /* TEAM */
 .team-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.team-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--p-purple4);border-radius:999px;font-size:13px;color:#4A3A8A;font-weight:500}
+.team-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--slate4);border-radius:999px;font-size:13px;color:var(--slate-dk);font-weight:500}
 .team-tag-del{background:none;border:none;cursor:pointer;color:#8B3A8B;font-size:16px;line-height:1;padding:0}
 .team-add-row{display:flex;gap:8px;align-items:center}
 
@@ -278,7 +279,7 @@ textarea{height:70px;resize:vertical}
 .gantt-status-cell{height:34px;border-bottom:1px solid #F2F0EB;display:flex;align-items:center;justify-content:center;font-size:12px}
 .gantt-zoom-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .zoom-btn{width:28px;height:28px;border:1.5px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:#666}
-.zoom-btn:hover{background:var(--p-teal);border-color:var(--green)}
+.zoom-btn:hover{background:var(--slate4);border-color:var(--slate)}
 .zoom-label{font-size:13px;color:var(--muted);min-width:44px;text-align:center;font-weight:600}
 .gantt-legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;align-items:center}
 
@@ -385,7 +386,15 @@ textarea{height:70px;resize:vertical}
           <div class="card-title" style="margin:0">Việc cần làm hôm nay</div>
           <div style="font-size:13px;color:var(--muted);margin-top:3px" id="today-date"></div>
         </div>
-        <button class="btn-secondary" onclick="renderToday()" style="padding:7px 14px;font-size:12px">↻ Làm mới</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="today-proj-filter" onchange="renderToday()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto;color:var(--muted)">
+            <option value="ALL">Tất cả dự án</option>
+          </select>
+          <select id="today-member-filter" onchange="renderToday()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto;color:var(--muted)">
+            <option value="ALL">Tất cả nhân viên</option>
+          </select>
+          <button class="btn-secondary" onclick="renderToday()" style="padding:7px 14px;font-size:12px">↻ Làm mới</button>
+        </div>
       </div>
       <div id="today-content"><div class="loading-row">Nhấn Sync để tải dữ liệu</div></div>
     </div>
@@ -479,14 +488,16 @@ textarea{height:70px;resize:vertical}
 
   <!-- TEAM -->
   <div id="tab-team" class="section">
-    <div class="card" style="max-width:580px">
-      <div class="card-title">Quản lý nhân sự</div>
-      <div class="team-list" id="team-list"></div>
-      <div class="team-add-row">
-        <input type="text" id="new-member" placeholder="Tên thành viên mới (VD: MR NAM)...">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="card-title" style="margin:0">Nhân sự & Phân công</div>
+        <div style="font-size:12px;color:var(--muted)" id="team-count-info"></div>
+      </div>
+      <div id="team-list" style="margin-bottom:14px"></div>
+      <div class="team-add-row" id="team-add-area" style="display:none;gap:8px;align-items:center;padding-top:12px;border-top:1px solid var(--border)">
+        <input type="text" id="new-member" placeholder="Tên thành viên mới (VD: MR NAM)..." style="max-width:260px">
         <button class="btn-submit" onclick="addMember()">Thêm</button>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:var(--faint)">Lưu vào PROJECT_INFO · Đồng bộ tất cả dropdown</div>
       <div class="toast" id="team-toast"></div>
     </div>
   </div>
@@ -571,8 +582,8 @@ const SA={
 };
 
 const PROJ_LIST=['NHÀ VUI','CICILIA DANANG','NOOK','NÓN HUẾ','MANDILA','AVATAR','HOSHIGAMI'];
-const PROJ_COLORS={'NHÀ VUI':'#85E3FF','CICILIA DANANG':'#B28DFF','NOOK':'#AFF8DB','NÓN HUẾ':'#FFABAB','MANDILA':'#FFC9DE','AVATAR':'#BFFCC6','HOSHIGAMI':'#AFCBFF'};
-const PROJ_TEXT={'NHÀ VUI':'#1A5A8A','CICILIA DANANG':'#4A3A8A','NOOK':'#1A6B5A','NÓN HUẾ':'#8B2020','MANDILA':'#8B2060','AVATAR':'#1A6B3A','HOSHIGAMI':'#3A4A8A'};
+const PROJ_COLORS={'NHÀ VUI':'#5B7FA6','CICILIA DANANG':'#7A6BAA','NOOK':'#4A9B7F','NÓN HUẾ':'#8A6B9A','MANDILA':'#7A8A6B','AVATAR':'#6B8A9A','HOSHIGAMI':'#7A8080'};
+const PROJ_TEXT={'NHÀ VUI':'#2A4A6A','CICILIA DANANG':'#3A2A7A','NOOK':'#1A5A4A','NÓN HUẾ':'#4A2A6A','MANDILA':'#3A4A2A','AVATAR':'#2A4A5A','HOSHIGAMI':'#3A4848'};
 const AIR_GROUPS=['CONTENT','EDIT VIDEO','KỊCH BẢN'];
 const STATUSES=['Mới','Đang thực hiện','Đang đợi duyệt','Khách đã duyệt','Đã gửi khách','Hoàn thành','Đã AIR'];
 const PRIORITIES=['P1 - ƯU TIÊN','P2 - QUAN TRỌNG','P3 - BÌNH THƯỜNG'];
@@ -589,18 +600,18 @@ const SOW={
 
 // Pastel status/priority
 const STATUS_CFG={
-  'Mới':             {bg:'#ECD4FF',color:'#4A3A8A',dot:'#8070D0',icon:'○'},
-  'Đang thực hiện':  {bg:'#ACE7FF',color:'#1A4A8A',dot:'#3A8AD0',icon:'◐'},
-  'Đang đợi duyệt':  {bg:'#FFFFD1',color:'#7A6000',dot:'#D0B000',icon:'◑'},
-  'Khách đã duyệt':  {bg:'#AFF8DB',color:'#1A6B5A',dot:'#3AAA7A',icon:'◕'},
-  'Đã gửi khách':    {bg:'#FFCCF9',color:'#8A2080',dot:'#C060C0',icon:'◉'},
-  'Hoàn thành':      {bg:'#BFFCC6',color:'#1A6B3A',dot:'#2EA865',icon:'●'},
-  'Đã AIR':          {bg:'#85E3FF',color:'#1A4A8A',dot:'#2A6AE0',icon:'★'},
+  'Mới':             {bg:'#E8EDF5',color:'#3D5A7A',dot:'#7A9BBF',icon:'○'},
+  'Đang thực hiện':  {bg:'#D6E8F5',color:'#2A4A6A',dot:'#5B7FA6',icon:'◐'},
+  'Đang đợi duyệt':  {bg:'#EBF0F7',color:'#4A5A6A',dot:'#7A8A9A',icon:'◑'},
+  'Khách đã duyệt':  {bg:'#D4EDE1',color:'#1A5A3A',dot:'#3A8A5A',icon:'◕'},
+  'Đã gửi khách':    {bg:'#E5E0F5',color:'#3A2A6A',dot:'#6A5AAA',icon:'◉'},
+  'Hoàn thành':      {bg:'#D4EDE1',color:'#1A5A3A',dot:'#2A8A55',icon:'●'},
+  'Đã AIR':          {bg:'#C5D5E8',color:'#2A4A6A',dot:'#5B7FA6',icon:'★'},
 };
 const PRI_CFG={
-  'P1 - ƯU TIÊN':   {bg:'#FFB5E8',color:'#8B0060',label:'P1 ↑'},
-  'P2 - QUAN TRỌNG':{bg:'#FFF5BA',color:'#7A5000',label:'P2'},
-  'P3 - BÌNH THƯỜNG':{bg:'#F2F0EC',color:'#888',  label:'P3'},
+  'P1 - ƯU TIÊN':   {bg:'#FDDDD8',color:'#8B2010',label:'P1 ↑'},
+  'P2 - QUAN TRỌNG':{bg:'#EBF0F7',color:'#3D5A7A',label:'P2'},
+  'P3 - BÌNH THƯỜNG':{bg:'#F2F4F7',color:'#6B7280',label:'P3'},
 };
 
 let tok=null,tokExp=0,allRows=[],sheetNames=[],projInfoData={};
@@ -637,7 +648,7 @@ async function loadAll(){
   try{
     sheetNames=await getSheets();allRows=[];
     for(const name of sheetNames){
-      if(name==='PROJECT_INFO'||name.includes('TỔNG HỢP')) continue;
+      if(name==='PROJECT_INFO'||name==='USERS'||name.includes('TỔNG HỢP')) continue;
       const d=await apiGet(`${name}!A3:H500`);
       if(d.values) d.values.forEach((row,i)=>{
         if(row.some(c=>c&&c.toString().trim()))
@@ -656,7 +667,7 @@ async function loadAll(){
     }
     updateMetrics();renderMonthPills();renderProjCards();renderTable();renderProjInfo();renderTeam();renderToday();populateSelects();
     if(document.getElementById('tab-perf')?.classList.contains('active')) renderPerf();
-    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
     activeGantt=projs[0]||'';renderGanttFilter();buildGanttPhases();renderGantt();
     const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} rows`;
@@ -709,7 +720,7 @@ function rowMatchesMonth(r){
 
 // ── METRICS ───────────────────────────────────────────────────────────────────
 function updateMetrics(){
-  const projs=new Set(sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP')));
+  const projs=new Set(sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP')));
   document.getElementById('m-total').textContent=projs.size;
   const mRows=r=>!r.isSubtask&&(activeMonth==='ALL'||rowMatchesMonth(r));
   document.getElementById('m-late').textContent=allRows.filter(r=>mRows(r)&&dlSt(r)==='overdue').length;
@@ -726,7 +737,7 @@ function ring(pct,color,bg){
   </svg>`;
 }
 function renderProjCards(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
   // All card
   const tAll=allRows.filter(r=>!r.isSubtask&&rowMatchesMonth(r)).length;
   const dAll=allRows.filter(r=>!r.isSubtask&&isDone(r)&&rowMatchesMonth(r)).length;
@@ -865,10 +876,36 @@ function renderToday(){
   const today=new Date();today.setHours(0,0,0,0);
   const todayStr=today.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
   document.getElementById('today-date').textContent=todayStr;
+
+  // Populate filter dropdowns
+  const projSel=document.getElementById('today-proj-filter');
+  const memberSel=document.getElementById('today-member-filter');
+  const selProjVal=projSel?.value||'ALL';
+  const selMemberVal=memberSel?.value||'ALL';
+
+  if(projSel){
+    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+    projSel.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${selProjVal===p?'selected':''}>${p}</option>`).join('');
+  }
+  // Members: admin sees all, member only sees self (hide filter)
+  if(memberSel){
+    if(!isAdmin()){
+      memberSel.style.display='none';
+    } else {
+      memberSel.style.display='';
+      memberSel.innerHTML='<option value="ALL">Tất cả nhân viên</option>'+teamMembers.map(m=>`<option value="${m}" ${selMemberVal===m?'selected':''}>${m}</option>`).join('');
+    }
+  }
+
+  const filterMember=!isAdmin()?currentUser?.name:selMemberVal;
+
   const todayTasks=allRows.filter(r=>{
     if(isDone(r)) return false;
     const ds=dlSt(r);
-    return ds==='overdue'||ds==='soon';
+    if(ds!=='overdue'&&ds!=='soon') return false;
+    if(selProjVal!=='ALL'&&r.sheet!==selProjVal) return false;
+    if(filterMember&&filterMember!=='ALL'&&(r.data[3]||'').trim()!==filterMember) return false;
+    return true;
   });
   if(!todayTasks.length){
     document.getElementById('today-content').innerHTML=`<div class="today-empty"><div class="today-empty-icon">🎉</div><div style="font-size:15px;font-weight:600;color:#4A3A8A;margin-bottom:6px">Không có việc gấp hôm nay!</div><div style="font-size:13px;color:var(--muted)">Tất cả task đang trong tiến độ tốt</div></div>`;
@@ -1105,7 +1142,7 @@ async function saveSubModal(){
 
 // ── PROJECT INFO ──────────────────────────────────────────────────────────────
 function renderProjInfo(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
   document.getElementById('proj-info-grid').innerHTML=projs.map(proj=>{
     const d=projInfoData[proj]||{};
     const c=PROJ_COLORS[proj]||'#ccc',ct=PROJ_TEXT[proj]||'#333';
@@ -1194,9 +1231,58 @@ async function savePI(proj){
 
 // ── TEAM ──────────────────────────────────────────────────────────────────────
 function renderTeam(){
-  document.getElementById('team-list').innerHTML=teamMembers.map((m,i)=>
-    `<div class="team-tag"><span>${m}</span><button class="team-tag-del" onclick="delMember(${i})">×</button></div>`
-  ).join('');
+  // Build stats per member from allRows
+  const memberStats={};
+  teamMembers.forEach(m=>{
+    const myRows=allRows.filter(r=>(r.data[3]||'').trim()===m);
+    const projs=[...new Set(myRows.map(r=>r.sheet).filter(Boolean))];
+    const total=myRows.filter(r=>!r.isSubtask).length;
+    const done=myRows.filter(r=>!r.isSubtask&&isDone(r)).length;
+    memberStats[m]={projs,total,done};
+  });
+
+  // Find position from usersCache
+  const posMap={};
+  if(usersCache.length) usersCache.forEach(u=>posMap[u.name]=u.position||'');
+
+  const avatarColors=['#5B7FA6','#4A9B7F','#7A6BAA','#8A6B9A','#7A8A6B','#6B8A9A','#7A8080','#5A7A8A'];
+
+  document.getElementById('team-list').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;width:100%">
+    ${teamMembers.map((m,i)=>{
+      const s=memberStats[m]||{projs:[],total:0,done:0};
+      const pct=s.total?Math.round(s.done/s.total*100):0;
+      const pos=posMap[m]||'';
+      const initials=m.replace(/^(MR|MS)\s+/i,'').slice(0,2).toUpperCase();
+      const avatarBg=avatarColors[i%avatarColors.length];
+      const isAdmin=currentUser?.role==='admin';
+      return `<div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:38px;height:38px;border-radius:10px;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${initials}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${m}</div>
+            <div style="font-size:11px;color:var(--muted)">${pos||'—'}</div>
+          </div>
+          ${isAdmin?`<button class="team-tag-del" onclick="delMember(${i})" title="Xóa" style="font-size:18px;color:var(--faint)">×</button>`:''}
+        </div>
+        <div style="height:4px;background:#F0F2F5;border-radius:2px;margin-bottom:8px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${avatarBg};border-radius:2px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${s.done}/${s.total} tasks hoàn thành · <strong style="color:var(--slate)">${pct}%</strong></div>
+        ${s.projs.length?`<div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${s.projs.map(p=>{const c=PROJ_COLORS[p]||'#888';return `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${c}33;color:${PROJ_TEXT[p]||'#333'};font-weight:600">${p}</span>`;}).join('')}
+        </div>`:'<div style="font-size:11px;color:var(--faint)">Chưa có task được assign</div>'}
+      </div>`;
+    }).join('')}
+    </div>`;
+
+  // Update count info
+  const totalMembers=teamMembers.length;
+  const totalAssigned=teamMembers.filter(m=>memberStats[m]&&memberStats[m].total>0).length;
+  const countEl=document.getElementById('team-count-info');
+  if(countEl) countEl.textContent=`${totalMembers} thành viên · ${totalAssigned} đang có task`;
+  // Keep add member input area
+  document.getElementById('team-add-area').style.display=currentUser?.role==='admin'?'flex':'none';
   populateSelects();
 }
 async function addMember(){
@@ -1249,7 +1335,7 @@ function previewClone(){
   document.getElementById('clone-preview').style.display='block';
   document.getElementById('clone-preview').innerHTML=cloneData.map(t=>`<div class="clone-preview-row">
     <span class="clone-tag" style="background:${(c[t.proj]||'#ccc')}55;color:${PROJ_TEXT[t.proj]||'#333'}">${t.proj}</span>
-    <span class="clone-tag" style="background:#ECD4FF;color:#4A3A8A">${t.group}</span>
+    <span class="clone-tag" style="background:var(--slate4);color:var(--slate-dk)">${t.group}</span>
     <span style="${t.task.startsWith('  ↳')?'color:#888;font-style:italic;padding-left:10px':''}">${t.task.trim()}</span>
   </div>`).join('');
   document.getElementById('clone-btn').style.display='inline-block';
@@ -1269,7 +1355,7 @@ async function doClone(){
 
 // ── SELECTS ───────────────────────────────────────────────────────────────────
 function populateSelects(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
   document.getElementById('a-sheet').innerHTML='<option value="">-- Chọn --</option>'+projs.map(n=>`<option>${n}</option>`).join('');
   const pOpts=teamMembers.map(m=>`<option>${m}</option>`).join('');
   ['a-person','sm-person'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=pOpts;});
@@ -1309,7 +1395,7 @@ function dP(dt){return Math.max(0,Math.min(100,(dt-GS)/86400000/TD*100));}
 function dW(s,e){return Math.max(0.2,(e-s)/86400000/TD*100);}
 function getCW(){return Math.round(TD*zl*5);}
 function renderGanttFilter(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
   document.getElementById('gantt-filter').innerHTML=projs.map(p=>`<button class="filter-btn ${p===activeGantt?'active':''}" onclick="switchG('${p}')">${p}</button>`).join('');
 }
 function switchG(p){activeGantt=p;renderGanttFilter();buildGanttPhases();renderGantt();}
@@ -1442,7 +1528,7 @@ function renderPerf(){
   const ms=document.getElementById('perf-month');
   if(ms){ms.innerHTML='<option value="ALL">Tất cả tháng</option>'+months.map(m=>`<option value="${m}" ${perfMonth===m?'selected':''}>Tháng ${m}/2026</option>`).join('');}
   const ps=document.getElementById('perf-proj');
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
   if(ps){ps.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${perfProj===p?'selected':''}>${p}</option>`).join('');}
 
   // Filter rows
@@ -1728,6 +1814,10 @@ function isAdmin(){return currentUser?.role==='admin';}
 let usersCache = [];
 
 async function renderUsersTable(){
+  if(!isAdmin()){
+    document.getElementById('users-table-wrap').innerHTML='<div class="loading-row" style="color:#B83030">⛔ Chỉ Admin mới có quyền truy cập</div>';
+    return;
+  }
   document.getElementById('users-table-wrap').innerHTML = '<div class="loading-row"><span class="spinner"></span>Đang tải...</div>';
   try{
     usersCache = await loadUsers();
