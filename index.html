@@ -1738,7 +1738,7 @@ async function doLogin(){
     const found=users.find(u=>u.username===uInput&&u.password===pInput&&u.active);
     if(found){
       currentUser=found;
-      sessionStorage.setItem('nams_user',JSON.stringify(found));
+      localStorage.setItem('nams_user',JSON.stringify(found));
       onLoginSuccess();
     }else{
       err.textContent='Sai tên đăng nhập hoặc mật khẩu';
@@ -1776,7 +1776,7 @@ function applyPermissions(){
 function doLogout(){
   if(!confirm('Đăng xuất?')) return;
   currentUser=null;
-  sessionStorage.removeItem('nams_user');
+  localStorage.removeItem('nams_user');
   document.getElementById('login-overlay').style.display='flex';
   document.getElementById('user-badge').style.display='none';
   document.getElementById('login-user').value='';
@@ -1793,7 +1793,7 @@ function togglePass(){
 
 // Check session on page load
 function checkSession(){
-  const saved=sessionStorage.getItem('nams_user');
+  const saved=localStorage.getItem('nams_user');
   if(saved){
     try{currentUser=JSON.parse(saved);onLoginSuccess();return true;}catch(e){}
   }
