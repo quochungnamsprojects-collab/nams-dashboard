@@ -60,8 +60,32 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* LAYOUT */
-.main{max-width:1500px;margin:0 auto;padding:24px 20px}
+/* SIDEBAR LAYOUT */
+.app-shell{display:flex;min-height:calc(100vh - 58px)}
+.sidebar{width:220px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;transition:width .2s}
+.sidebar.collapsed{width:60px}
+.sidebar-toggle{display:flex;align-items:center;justify-content:flex-end;padding:12px 12px 4px;border-bottom:1px solid var(--border)}
+.sidebar-toggle-btn{width:28px;height:28px;border:1.5px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0;transition:all .15s}
+.sidebar-toggle-btn:hover{background:var(--slate4);border-color:var(--slate)}
+.sidebar-section{padding:8px 8px 4px;font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden}
+.sidebar.collapsed .sidebar-section{opacity:0}
+.sidebar-divider{height:1px;background:var(--border);margin:6px 12px}
+.sidebar-nav{flex:1;padding:4px 8px;display:flex;flex-direction:column;gap:2px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--muted);font-weight:500;transition:all .15s;text-align:left;width:100%;white-space:nowrap;overflow:hidden}
+.sidebar-item:hover{background:var(--slate4);color:var(--text)}
+.sidebar-item.active{background:var(--green);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(74,155,127,.25)}
+.sidebar-item.active .sidebar-icon{color:#fff}
+.sidebar-item.nav-today.active{background:var(--slate);box-shadow:0 2px 8px rgba(91,127,166,.25)}
+.sidebar-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center;line-height:1}
+.sidebar-label{flex:1;overflow:hidden;text-overflow:ellipsis}
+.sidebar.collapsed .sidebar-label{display:none}
+.sidebar-badge{font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0}
+.sidebar.collapsed .sidebar-badge{display:none}
+.sidebar-bottom{padding:8px;border-top:1px solid var(--border)}
+.sidebar-add-btn{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:9px;border:1.5px dashed var(--green);background:transparent;cursor:pointer;font-size:13px;color:var(--green);font-weight:600;transition:all .15s;width:100%;white-space:nowrap;overflow:hidden}
+.sidebar-add-btn:hover{background:var(--green-lt);border-style:solid}
+.sidebar.collapsed .sidebar-add-btn .sidebar-label{display:none}
+.main{flex:1;min-width:0;padding:24px 20px;overflow-x:hidden}
 
 /* METRICS */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
@@ -76,11 +100,6 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 .metric-label{font-size:13px;color:var(--muted);font-weight:500}
 
 /* TABS */
-.tabs{display:flex;gap:3px;margin-bottom:20px;background:var(--card);border-radius:12px;padding:5px;border:1px solid var(--border);width:fit-content;flex-wrap:wrap}
-.tab{padding:8px 16px;border-radius:8px;border:none;background:none;font-size:13px;color:var(--muted);cursor:pointer;font-weight:500;transition:all .15s;white-space:nowrap}
-.tab.active{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(74,155,127,.3)}
-.tab.tab-today.active{background:var(--slate);color:#fff}
-.tab:hover:not(.active){background:#F0EEE8;color:var(--text)}
 .section{display:none}.section.active{display:block}
 
 /* CARDS */
@@ -286,11 +305,44 @@ textarea{height:70px;resize:vertical}
 .zoom-label{font-size:13px;color:var(--muted);min-width:44px;text-align:center;font-weight:600}
 .gantt-legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;align-items:center}
 
+/* HISTORY */
+.hist-day-hdr{padding:10px 16px;background:var(--slate4);border-radius:8px;margin-bottom:8px;margin-top:16px;font-size:12px;font-weight:700;color:var(--slate-dk);display:flex;align-items:center;gap:8px}
+.hist-day-hdr:first-child{margin-top:0}
+.hist-item{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border-radius:8px;margin-bottom:4px;border:1px solid var(--border);background:#fff;transition:background .15s}
+.hist-item:hover{background:var(--slate4)}
+.hist-time{font-size:11px;color:var(--muted);white-space:nowrap;min-width:42px;margin-top:2px;font-weight:600}
+.hist-avatar{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.hist-body{flex:1;min-width:0}
+.hist-user{font-size:12px;font-weight:700;color:var(--text)}
+.hist-action-badge{font-size:10px;padding:2px 7px;border-radius:5px;font-weight:600;margin-left:6px}
+.hist-task{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-change{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11px}
+.hist-old{background:#FDDDD8;color:#8B2010;padding:2px 7px;border-radius:4px;font-weight:500}
+.hist-new{background:#D4EDE1;color:#1A5A3A;padding:2px 7px;border-radius:4px;font-weight:500}
+.hist-arrow{color:var(--muted);font-size:12px}
+.hist-proj-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+/* Table view */
+.hist-table{width:100%;border-collapse:collapse}
+.hist-table th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:#FAFAF8;white-space:nowrap}
+.hist-table td{padding:8px 12px;border-bottom:1px solid #F0EEE8;font-size:12px;vertical-align:middle}
+.hist-table tr:hover td{background:#FAFAF8}
+
+@media(max-width:900px){
+  .sidebar{position:fixed;top:58px;left:0;height:calc(100vh - 58px);z-index:150;box-shadow:4px 0 16px rgba(0,0,0,.08)}
+  .sidebar:not(.collapsed){width:220px}
+  .sidebar.collapsed{width:0;border:none;overflow:hidden}
+  .sidebar-toggle{display:none}
+  .mobile-menu-btn{display:flex !important}
+  .app-shell{display:block}
+  .main{padding:16px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
 @media(max-width:768px){.metrics{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.gantt-labels{width:120px}.proj-cards{grid-template-columns:repeat(2,1fr)}.proj-info-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
+  <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" style="display:none;width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:18px;margin-right:8px;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0">☰</button>
   <div class="logo">
     <div class="logo-icon">N</div>
     <div>
@@ -309,24 +361,70 @@ textarea{height:70px;resize:vertical}
   </div>
 </header>
 
+<div class="app-shell">
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-toggle">
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" id="sidebar-toggle-btn" title="Thu gọn/Mở rộng">◀</button>
+  </div>
+  <div class="sidebar-nav">
+    <!-- THƯỜNG DÙNG -->
+    <div class="sidebar-section">Thường dùng</div>
+    <button class="sidebar-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+      <span class="sidebar-icon">📊</span><span class="sidebar-label">Dashboard</span>
+    </button>
+    <button class="sidebar-item nav-today" id="nav-today" onclick="switchTab('today')">
+      <span class="sidebar-icon">📋</span><span class="sidebar-label">Việc cần làm</span>
+      <span class="sidebar-badge" id="badge-today" style="background:#FDDDD8;color:#8B2010;display:none"></span>
+    </button>
+    <button class="sidebar-item" id="nav-gantt" onclick="switchTab('gantt')">
+      <span class="sidebar-icon">📅</span><span class="sidebar-label">Gantt Chart</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- DỰ ÁN -->
+    <div class="sidebar-section">Dự án</div>
+    <button class="sidebar-item" id="nav-info" onclick="switchTab('info')">
+      <span class="sidebar-icon">ℹ️</span><span class="sidebar-label">Thông tin dự án</span>
+    </button>
+    <button class="sidebar-item" id="nav-clone" onclick="switchTab('clone')">
+      <span class="sidebar-icon">🔄</span><span class="sidebar-label">Tháng mới</span>
+    </button>
+
+    <div class="sidebar-divider admin-only"></div>
+
+    <!-- QUẢN LÝ (admin) -->
+    <div class="sidebar-section admin-only">Quản lý</div>
+    <button class="sidebar-item" id="nav-perf" onclick="switchTab('perf')">
+      <span class="sidebar-icon">📈</span><span class="sidebar-label">Hiệu suất</span>
+    </button>
+    <button class="sidebar-item admin-only" id="nav-team" onclick="switchTab('team')">
+      <span class="sidebar-icon">👥</span><span class="sidebar-label">Nhân sự</span>
+    </button>
+    <button class="sidebar-item admin-only" id="nav-history" onclick="switchTab('history')">
+      <span class="sidebar-icon">📜</span><span class="sidebar-label">Lịch sử</span>
+    </button>
+    <button class="sidebar-item admin-only" id="nav-users" onclick="switchTab('users')">
+      <span class="sidebar-icon">🔑</span><span class="sidebar-label">Quản lý User</span>
+    </button>
+  </div>
+
+  <!-- ADD TASK -->
+  <div class="sidebar-bottom">
+    <button class="sidebar-add-btn" onclick="switchTab('add')">
+      <span class="sidebar-icon">➕</span><span class="sidebar-label">Thêm task</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
 <div class="main">
   <div class="metrics">
     <div class="metric m-teal"><div class="metric-icon">📁</div><div class="metric-value" id="m-total" style="color:#1A6B5A">—</div><div class="metric-label">Dự án đang chạy</div></div>
     <div class="metric m-pink"><div class="metric-icon">⚠️</div><div class="metric-value" id="m-late" style="color:#B83060">—</div><div class="metric-label">Task trễ deadline</div></div>
     <div class="metric m-purple"><div class="metric-icon">✅</div><div class="metric-value" id="m-done" style="color:#4A3A8A">—</div><div class="metric-label">Tasks hoàn thành</div></div>
     <div class="metric m-blue"><div class="metric-icon">📋</div><div class="metric-value" id="m-tasks" style="color:#3A5A8A">—</div><div class="metric-label">Tổng tasks chính</div></div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
-    <button class="tab tab-today" onclick="switchTab('today')">📋 Việc cần làm</button>
-    <button class="tab" onclick="switchTab('info')">Thông tin dự án</button>
-    <button class="tab" onclick="switchTab('gantt')">Gantt Chart</button>
-    <button class="tab" onclick="switchTab('clone')">Tháng mới</button>
-    <button class="tab" onclick="switchTab('perf')">📊 Hiệu suất</button>
-    <button class="tab admin-only" onclick="switchTab('team')">👥 Nhân sự</button>
-    <button class="tab admin-only" onclick="switchTab('users')">🔑 Quản lý User</button>
-    <button class="tab" onclick="switchTab('add')">+ Thêm task</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -525,6 +623,47 @@ textarea{height:70px;resize:vertical}
     </div>
   </div>
 
+  <!-- HISTORY -->
+  <div id="tab-history" class="section">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="card-title" style="margin:0">Lịch sử cập nhật</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">30 ngày gần nhất · Chỉ Admin xem được</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="hist-member" onchange="renderHistory()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
+            <option value="ALL">Tất cả thành viên</option>
+          </select>
+          <select id="hist-proj" onchange="renderHistory()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
+            <option value="ALL">Tất cả dự án</option>
+          </select>
+          <select id="hist-action" onchange="renderHistory()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:#fff;width:auto">
+            <option value="ALL">Tất cả hành động</option>
+            <option value="update_status">Đổi trạng thái</option>
+            <option value="update_person">Đổi người làm</option>
+            <option value="update_priority">Đổi ưu tiên</option>
+            <option value="update_deadline">Đổi deadline</option>
+            <option value="update_note">Sửa ghi chú</option>
+            <option value="update_name">Đổi tên task</option>
+            <option value="add_task">Thêm task</option>
+            <option value="add_subtask">Thêm subtask</option>
+            <option value="delete_task">Xóa task</option>
+            <option value="move_task">Di chuyển task</option>
+          </select>
+          <button class="btn-secondary" onclick="loadHistory(true)" style="padding:7px 14px;font-size:12px">↻ Làm mới</button>
+        </div>
+      </div>
+      <!-- View toggle -->
+      <div style="display:flex;gap:6px;margin-bottom:16px">
+        <button id="hist-view-timeline" class="filter-btn active" onclick="setHistView('timeline')">📅 Timeline</button>
+        <button id="hist-view-table" class="filter-btn" onclick="setHistView('table')">📋 Bảng</button>
+      </div>
+      <div id="history-content"><div class="loading-row">Nhấn tab để tải lịch sử</div></div>
+      <div class="toast" id="hist-toast"></div>
+    </div>
+  </div>
+
   <!-- ADD TASK -->
   <div id="tab-add" class="section">
     <div class="card">
@@ -548,7 +687,8 @@ textarea{height:70px;resize:vertical}
       <div class="toast" id="a-toast"></div>
     </div>
   </div>
-</div>
+</div><!-- end .main -->
+</div><!-- end .app-shell -->
 
 <!-- SUBTASK MODAL -->
 <div class="modal-overlay" id="sub-modal">
@@ -736,6 +876,7 @@ async function loadAll(silent=false){
     updateMetrics();renderMonthPills();renderProjCards();renderTable();
     renderProjInfo();renderTeam();renderToday();populateSelects();
     if(document.getElementById('tab-perf')?.classList.contains('active')) renderPerf();
+    if(document.getElementById('tab-history')?.classList.contains('active')) loadHistory(true);
     const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
     activeGantt=projs[0]||'';renderGanttFilter();buildGanttPhases();renderGantt();
 
@@ -802,6 +943,7 @@ function updateMetrics(){
   document.getElementById('m-late').textContent=allRows.filter(r=>mRows(r)&&dlSt(r)==='overdue').length;
   document.getElementById('m-done').textContent=allRows.filter(r=>mRows(r)&&isDone(r)).length;
   document.getElementById('m-tasks').textContent=allRows.filter(r=>mRows(r)).length;
+  updateTodayBadge();
 }
 
 // ── PROJ CARDS ────────────────────────────────────────────────────────────────
@@ -1085,7 +1227,9 @@ function editTaskName(i,el){
     showAS(true);
     try{
       await apiPut(`${r.sheet}!C${r.rowNum}`,[[finalName]]);
+      const oldName=(r.data[2]||'').replace(/^\s*↳\s*/,'').trim();
       r.data[2]=finalName;el.textContent=newName;
+      writeLog('update_name',r.sheet,oldName,oldName,newName,'Tên task');
       showToast('dash-toast',`Đã đổi tên: ${newName}`,true);
     }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
     finally{showAS(false);}
@@ -1112,11 +1256,17 @@ async function doSaveRow(i){
     await apiPut(`${r.sheet}!D${r.rowNum}`,[[np]]);
     await apiPut(`${r.sheet}!F${r.rowNum}`,[[npr]]);
     await apiPut(`${r.sheet}!G${r.rowNum}`,[[ns]]);
+    const oldP=r.data[3],oldPr=r.data[5],oldS=r.data[6];
     r.data[3]=np;r.data[5]=npr;r.data[6]=ns;
     updateMetrics();renderProjCards();
     const tr=document.getElementById('drow-'+i);
     if(tr){const ds=dlSt(r);tr.className=r.isSubtask?'row-subtask':ds==='done'?'row-done':ds==='overdue'?'row-overdue':ds==='soon'?'row-soon':'row-normal';}
     clearCache();
+    // Log changes
+    const tn=(r.data[2]||'').replace(/^\s*↳\s*/,'').trim();
+    if(oldS!==ns) writeLog('update_status',r.sheet,tn,oldS,ns,'Trạng thái');
+    if(oldP!==np) writeLog('update_person',r.sheet,tn,oldP,np,'Người làm');
+    if(oldPr!==npr) writeLog('update_priority',r.sheet,tn,oldPr,npr,'Ưu tiên');
     showToast('dash-toast',`Đã lưu`,true);
   }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
   finally{showAS(false);}
@@ -1124,14 +1274,22 @@ async function doSaveRow(i){
 async function doSaveDate(i,v){
   const f=getF();if(i>=f.length) return;
   const r=f[i];
-  try{await apiPut(`${r.sheet}!E${r.rowNum}`,[[v]]);r.data[4]=v;showToast('dash-toast','Đã lưu deadline',true);}
+  try{
+    const oldDl=r.data[4]||'';
+    await apiPut(`${r.sheet}!E${r.rowNum}`,[[v]]);
+    writeLog('update_deadline',r.sheet,(r.data[2]||'').replace(/^\s*↳\s*/,'').trim(),oldDl||'—',v||'—','Deadline');
+    r.data[4]=v;showToast('dash-toast','Đã lưu deadline',true);}
   catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
   finally{showAS(false);}
 }
 async function doSaveNote(i,v){
   const f=getF();if(i>=f.length) return;
   const r=f[i];
-  try{await apiPut(`${r.sheet}!H${r.rowNum}`,[[v]]);r.data[7]=v;}
+  try{
+    const oldNote=r.data[7]||'';
+    await apiPut(`${r.sheet}!H${r.rowNum}`,[[v]]);
+    if(oldNote!==v) writeLog('update_note',r.sheet,(r.data[2]||'').replace(/^\s*↳\s*/,'').trim(),oldNote||'—',v||'—','Ghi chú');
+    r.data[7]=v;}
   catch(e){showToast('dash-toast','Lỗi ghi chú',false);}
   finally{showAS(false);}
 }
@@ -1235,6 +1393,7 @@ function initDragRows(){
         apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[mkRow(src)]),
         apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[mkRow(tgt)]),
       ]);
+      writeLog('move_task',src.sheet,(src.data[2]||'').replace(/^\s*↳\s*/,'').trim(),'','','');
       showToast('dash-toast','Đã đổi vị trí task',true);
     }catch(err){
       showToast('dash-toast','Lỗi lưu: '+err.message,false);
@@ -1285,6 +1444,7 @@ async function confirmDelete(){
   const gi=allRows.findIndex(x=>x.sheet===r.sheet&&x.rowNum===r.rowNum);
   if(gi!==-1) allRows.splice(gi,1);
   closeDelModal();updateMetrics();renderProjCards();
+  writeLog('delete_task',r.sheet,name,'','','');
   showToast('dash-toast',`Đã xóa: ${name}`,true);
   apiClear(`${r.sheet}!A${r.rowNum}:H${r.rowNum}`).catch(()=>{});
   btn.disabled=false;btn.textContent='Xóa';
@@ -1316,6 +1476,7 @@ async function saveSubModal(){
   const parentIdx=allRows.indexOf(parent);
   if(parentIdx>=0) allRows.splice(parentIdx+1,0,newRow);
   else allRows.push(newRow);
+  writeLog('add_subtask',parent.sheet,name,'','Mới','');
   closeSubModal();renderTable();updateMetrics();renderProjCards();
   showToast('dash-toast',`Đã thêm subtask: ${name}`,true);
   // Write to Sheets in background
@@ -1564,6 +1725,7 @@ async function addTask(){
   const newRow={sheet,rowNum:999999,data:[sheet,group,task,person,deadline||'',priority,'Mới',note],isSubtask:false};
   allRows.push(newRow);
   updateMetrics();renderMonthPills();renderProjCards();renderTable();
+  writeLog('add_task',sheet,task,'','Mới','');
   showToast('a-toast',`Đã thêm: ${task}`,true);
   ['a-task','a-note','a-deadline'].forEach(id=>document.getElementById(id).value='');
   btn.disabled=false;btn.textContent='Thêm vào Google Sheets';
@@ -1684,13 +1846,52 @@ function renderGantt(){
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function switchTab(name){
-  const tabs=['dashboard','today','info','gantt','clone','perf','team','users','add'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
+  // Deactivate all sidebar items
+  document.querySelectorAll('.sidebar-item,.sidebar-add-btn').forEach(el=>el.classList.remove('active'));
+  // Activate target
+  const target=document.getElementById('nav-'+name)||document.querySelector('.sidebar-add-btn');
+  if(name==='add') document.querySelector('.sidebar-add-btn')?.classList.add('active');
+  else if(target) target.classList.add('active');
+  // Show section
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
+  const sec=document.getElementById('tab-'+name);
+  if(sec) sec.classList.add('active');
+  // Store active tab
+  window._activeTab=name;
+  // Render hooks
   if(name==='today') renderToday();
   if(name==='perf') renderPerf();
   if(name==='users') renderUsersTable();
+  if(name==='history') loadHistory();
+}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const btn=document.getElementById('sidebar-toggle-btn');
+  const collapsed=sb.classList.toggle('collapsed');
+  btn.textContent=collapsed?'▶':'◀';
+  localStorage.setItem('sidebar_collapsed',collapsed?'1':'0');
+}
+function initSidebar(){
+  const collapsed=localStorage.getItem('sidebar_collapsed')==='1';
+  if(collapsed){
+    document.getElementById('sidebar')?.classList.add('collapsed');
+    const btn=document.getElementById('sidebar-toggle-btn');
+    if(btn) btn.textContent='▶';
+  }
+  updateTodayBadge();
+}
+function updateTodayBadge(){
+  const badge=document.getElementById('badge-today');
+  if(!badge) return;
+  const urgent=allRows.filter(r=>{
+    if(isDone(r)) return false;
+    const ds=dlSt(r);
+    if(ds!=='overdue'&&ds!=='soon') return false;
+    if(!isAdmin()&&currentUser) return (r.data[3]||'').trim()===currentUser.name;
+    return true;
+  }).length;
+  if(urgent>0){badge.textContent=urgent;badge.style.display='flex';}
+  else badge.style.display='none';
 }
 function showToast(id,msg,ok){
   const el=document.getElementById(id);
@@ -1946,6 +2147,7 @@ function onLoginSuccess(){
   document.getElementById('user-badge').style.display='flex';
   // Apply permissions
   applyPermissions();
+  initSidebar();
   // Load data
   loadAll();
 }
@@ -2246,6 +2448,232 @@ function copyToClip(text){
     const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);
     showToast('users-toast','Đã copy: '+text,true);
   });
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACTIVITY LOG — Lịch sử cập nhật
+// ══════════════════════════════════════════════════════════════════════════════
+const LOG_SHEET = 'ACTIVITY_LOG';
+const LOG_DAYS  = 30; // giữ 30 ngày
+let historyCache = [];
+let histView = 'timeline';
+
+// Config hành động
+const ACTION_CFG = {
+  update_status:   {icon:'🔄', label:'Đổi trạng thái', bg:'#D6E8F5', color:'#2A4A6A'},
+  update_person:   {icon:'👤', label:'Đổi người làm',  bg:'#E5E0F5', color:'#3A2A6A'},
+  update_priority: {icon:'⚡', label:'Đổi ưu tiên',    bg:'#EBF0F7', color:'#3D5A7A'},
+  update_deadline: {icon:'📅', label:'Đổi deadline',   bg:'#FFF5BA', color:'#7A5000'},
+  update_note:     {icon:'📝', label:'Sửa ghi chú',    bg:'#E8EDF5', color:'#3D5A7A'},
+  update_name:     {icon:'✏️', label:'Đổi tên task',   bg:'#E8EDF5', color:'#3D5A7A'},
+  add_task:        {icon:'➕', label:'Thêm task',       bg:'#D4EDE1', color:'#1A5A3A'},
+  add_subtask:     {icon:'↳',  label:'Thêm subtask',   bg:'#D4EDE1', color:'#1A5A3A'},
+  delete_task:     {icon:'🗑', label:'Xóa task',        bg:'#FDDDD8', color:'#8B2010'},
+  move_task:       {icon:'↕️', label:'Di chuyển',       bg:'#EBF0F7', color:'#3D5A7A'},
+};
+
+const AVATAR_COLORS=['#5B7FA6','#4A9B7F','#7A6BAA','#8A6B9A','#7A8A6B','#6B8A9A','#7A8080','#5A7060'];
+
+function avatarColor(name){
+  const idx=teamMembers.indexOf(name);
+  return AVATAR_COLORS[(idx>=0?idx:Math.abs(name.charCodeAt(0)))%AVATAR_COLORS.length];
+}
+function initials(name){return name.replace(/^(MR|MS)\s+/i,'').slice(0,2).toUpperCase();}
+
+// ── GHI LOG (gọi ngầm, không block UI) ────────────────────────────────────
+function writeLog(action, sheet, taskName, oldVal, newVal, field){
+  if(!currentUser) return;
+  const now = new Date();
+  const ts = now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})
+           + ' ' + now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const row = [ts, currentUser.name, action, sheet||'', taskName||'', oldVal||'—', newVal||'—', field||'—'];
+  // Ghi ngầm, không await
+  apiPost(LOG_SHEET, [row]).catch(()=>{});
+  // Xóa log cũ hơn 30 ngày định kỳ (1% chance mỗi lần write để không quá tốn)
+  if(Math.random()<0.01) pruneOldLogs();
+}
+
+async function pruneOldLogs(){
+  try{
+    const d = await apiGet(`${LOG_SHEET}!A2:H1000`);
+    if(!d.values||d.values.length<50) return; // không cần xóa nếu ít
+    const cutoff = new Date();cutoff.setDate(cutoff.getDate()-LOG_DAYS);
+    const keep = d.values.filter(r=>{
+      if(!r[0]) return false;
+      const parts = r[0].split(' ')[0].split('/');
+      if(parts.length<3) return true;
+      const dt = new Date(parts[2],parts[1]-1,parts[0]);
+      return dt>=cutoff;
+    });
+    if(keep.length<d.values.length){
+      await apiClear(`${LOG_SHEET}!A2:H1000`);
+      if(keep.length>0) await apiPut(`${LOG_SHEET}!A2`,keep);
+    }
+  }catch(e){}
+}
+
+// ── ĐỌC LOG ───────────────────────────────────────────────────────────────
+async function loadHistory(force=false){
+  if(!isAdmin()){
+    document.getElementById('history-content').innerHTML='<div class="loading-row" style="color:#B83030">⛔ Chỉ Admin mới có quyền xem lịch sử</div>';
+    return;
+  }
+  if(!force && historyCache.length){renderHistory();return;}
+  document.getElementById('history-content').innerHTML='<div class="loading-row"><span class="spinner"></span>Đang tải lịch sử...</div>';
+  try{
+    const d = await apiGet(`${LOG_SHEET}!A2:H2000`);
+    const rows = d.values||[];
+    // Parse + filter 30 ngày
+    const cutoff = new Date();cutoff.setDate(cutoff.getDate()-LOG_DAYS);
+    historyCache = rows.filter(r=>{
+      if(!r[0]||!r[2]) return false;
+      const parts=r[0].split(' ')[0].split('/');
+      if(parts.length<3) return true;
+      const dt=new Date(parts[2],parts[1]-1,parts[0]);
+      return dt>=cutoff;
+    }).map(r=>({
+      ts:r[0]||'',user:r[1]||'',action:r[2]||'',
+      sheet:r[3]||'',task:r[4]||'',
+      oldVal:r[5]||'—',newVal:r[6]||'—',field:r[7]||'—'
+    })).reverse(); // mới nhất lên trên
+    renderHistory();
+  }catch(e){
+    document.getElementById('history-content').innerHTML=`<div class="loading-row" style="color:#B83030">Lỗi tải lịch sử: ${e.message}</div>`;
+  }
+}
+
+function setHistView(v){
+  histView=v;
+  document.getElementById('hist-view-timeline').classList.toggle('active',v==='timeline');
+  document.getElementById('hist-view-table').classList.toggle('active',v==='table');
+  renderHistory();
+}
+
+function renderHistory(){
+  if(!isAdmin()) return;
+  const member=document.getElementById('hist-member')?.value||'ALL';
+  const proj=document.getElementById('hist-proj')?.value||'ALL';
+  const action=document.getElementById('hist-action')?.value||'ALL';
+
+  // Populate selects
+  const mSel=document.getElementById('hist-member');
+  if(mSel){const cur=mSel.value;mSel.innerHTML='<option value="ALL">Tất cả thành viên</option>'+teamMembers.map(m=>`<option value="${m}" ${cur===m?'selected':''}>${m}</option>`).join('');}
+  const pSel=document.getElementById('hist-proj');
+  if(pSel){
+    const cur=pSel.value;
+    const projs=[...new Set(historyCache.map(h=>h.sheet).filter(Boolean))].sort();
+    pSel.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${cur===p?'selected':''}>${p}</option>`).join('');
+  }
+
+  // Filter
+  let items=historyCache;
+  if(member!=='ALL') items=items.filter(h=>h.user===member);
+  if(proj!=='ALL')   items=items.filter(h=>h.sheet===proj);
+  if(action!=='ALL') items=items.filter(h=>h.action===action);
+
+  if(!items.length){
+    document.getElementById('history-content').innerHTML='<div class="loading-row">Không có lịch sử nào phù hợp</div>';
+    return;
+  }
+
+  if(histView==='timeline') renderTimeline(items);
+  else renderHistTable(items);
+}
+
+function renderTimeline(items){
+  // Group by date
+  const byDay={};
+  items.forEach(h=>{
+    const day=h.ts.split(' ')[0]||'Unknown';
+    if(!byDay[day]) byDay[day]=[];
+    byDay[day].push(h);
+  });
+
+  const today=new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const yesterday=new Date(Date.now()-86400000).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const html=Object.entries(byDay).map(([day,dayItems])=>{
+    const label=day===today?`📅 Hôm nay — ${day}`:day===yesterday?`📅 Hôm qua — ${day}`:`📅 ${day}`;
+    const rows=dayItems.map(h=>histItemHtml(h,'timeline')).join('');
+    return `<div class="hist-day-hdr">${label} <span style="color:var(--muted);font-weight:400">(${dayItems.length} hoạt động)</span></div>${rows}`;
+  }).join('');
+
+  document.getElementById('history-content').innerHTML=
+    `<div style="margin-bottom:12px;font-size:12px;color:var(--muted)">${items.length} hoạt động trong 30 ngày qua</div>`+html;
+}
+
+function histItemHtml(h, mode){
+  const cfg=ACTION_CFG[h.action]||{icon:'•',label:h.action,bg:'#E8EDF5',color:'#3D5A7A'};
+  const ac=avatarColor(h.user);
+  const projColor=PROJ_COLORS[h.sheet]||'#888';
+  const projText=PROJ_TEXT[h.sheet]||'#333';
+  const time=h.ts.split(' ')[1]||'';
+  const hasChange=h.oldVal&&h.newVal&&h.oldVal!=='—'&&h.newVal!=='—'&&h.oldVal!==h.newVal;
+  const taskShort=(h.task||'').replace(/^\s*↳\s*/,'').replace(/^\[T\d+\]\s*/,'');
+
+  return `<div class="hist-item">
+    <div class="hist-time">${time}</div>
+    <div class="hist-avatar" style="background:${ac}">${initials(h.user)}</div>
+    <div class="hist-body">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="hist-user">${h.user}</span>
+        <span class="hist-action-badge" style="background:${cfg.bg};color:${cfg.color}">${cfg.icon} ${cfg.label}</span>
+        ${h.sheet?`<span class="hist-proj-tag" style="background:${projColor}33;color:${projText}">${h.sheet}</span>`:''}
+      </div>
+      <div class="hist-task" title="${h.task}">${taskShort||'—'}</div>
+      ${hasChange?`<div class="hist-change">
+        <span style="font-size:11px;color:var(--muted)">${h.field}:</span>
+        <span class="hist-old">${h.oldVal}</span>
+        <span class="hist-arrow">→</span>
+        <span class="hist-new">${h.newVal}</span>
+      </div>`:''}
+    </div>
+  </div>`;
+}
+
+function renderHistTable(items){
+  const rows=items.map(h=>{
+    const cfg=ACTION_CFG[h.action]||{icon:'•',label:h.action,bg:'#E8EDF5',color:'#3D5A7A'};
+    const ac=avatarColor(h.user);
+    const taskShort=(h.task||'').replace(/^\s*↳\s*/,'').replace(/^\[T\d+\]\s*/,'');
+    const hasChange=h.oldVal&&h.newVal&&h.oldVal!=='—'&&h.newVal!=='—'&&h.oldVal!==h.newVal;
+    const projColor=PROJ_COLORS[h.sheet]||'#888';
+    const projText=PROJ_TEXT[h.sheet]||'#333';
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--muted);font-size:11px">${h.ts}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div class="hist-avatar" style="background:${ac};width:24px;height:24px;border-radius:6px;font-size:10px">${initials(h.user)}</div>
+          <span style="font-size:12px;font-weight:600">${h.user}</span>
+        </div>
+      </td>
+      <td><span style="background:${cfg.bg};color:${cfg.color};padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600">${cfg.icon} ${cfg.label}</span></td>
+      <td>${h.sheet?`<span style="background:${projColor}33;color:${projText};padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600">${h.sheet}</span>`:''}</td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.task}">${taskShort}</td>
+      <td>
+        ${hasChange
+          ?`<div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap">
+              <span class="hist-old">${h.oldVal}</span>
+              <span style="color:var(--muted)">→</span>
+              <span class="hist-new">${h.newVal}</span>
+            </div>`
+          :`<span style="color:var(--faint)">—</span>`}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('history-content').innerHTML=`
+    <div style="margin-bottom:12px;font-size:12px;color:var(--muted)">${items.length} hoạt động</div>
+    <div style="overflow-x:auto">
+      <table class="hist-table">
+        <thead><tr>
+          <th>Thời gian</th><th>Thành viên</th><th>Hành động</th>
+          <th>Dự án</th><th>Công việc</th><th>Thay đổi</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 
