@@ -173,7 +173,9 @@ tr.row-subtask:hover td{background:#EBF0F7}
 .drag-handle{cursor:grab;color:#CCC;font-size:15px;padding:2px 5px;user-select:none;display:inline-block;line-height:1;border-radius:4px;transition:all .15s}
 .drag-handle:hover{color:var(--green);background:var(--p-teal)}
 .drag-handle:active{cursor:grabbing}
-tr.drag-over td{background:var(--p-teal) !important;border-top:2px solid var(--green) !important}
+tr.drag-over td{background:var(--green-lt) !important;}
+tr.drag-over td:first-child{border-left:3px solid var(--green) !important;}
+tr.dragging td{opacity:.4 !important;background:#F0F2F5 !important;}
 
 /* COL RESIZER */
 .col-resizer{position:absolute;right:0;top:0;height:100%;width:6px;cursor:col-resize;z-index:10;background:transparent;border-right:2px solid transparent;transition:border-color .15s}
@@ -917,7 +919,7 @@ function renderTable(){
       rows.push(`<tr class="row-group-hdr"><td colspan="9"><span style="color:${c};margin-right:5px">●</span>${r.sheet} · ${g||'—'}</td></tr>`);
       lastGroup=groupKey;
     }
-    const dragHandle=`<span class="drag-handle" draggable="true" ondragstart="dragStart(event,${i})" ondragover="dragOver(event)" ondrop="dragDrop(event,${i})" ondragend="dragEnd(event)" title="Kéo để sắp xếp">⠿</span>`;
+    const dragHandle=`<span class="drag-handle" title="Kéo để sắp xếp">⠿</span>`;
     const projCell=r.isSubtask?`<div style="font-size:11px;color:#ccc;padding-left:12px">↳ sub</div>`:`<div style="font-size:12px;font-weight:700;color:${ct}">${r.sheet}</div>`;
     const rawName=(d[2]||'').replace(/^\s*↳\s*/,'');
     const nameCell=`<div style="${r.isSubtask?'padding-left:18px;':''}display:flex;align-items:center;gap:6px">
@@ -965,6 +967,7 @@ function renderTable(){
   });
   document.getElementById('task-table').innerHTML=rows.join('');
   initColResize();
+  initDragRows();
 }
 
 // ── TODAY TAB ────────────────────────────────────────────────────────────────
@@ -1131,55 +1134,90 @@ async function doSaveNote(i,v){
 }
 
 // ── DRAG & DROP ───────────────────────────────────────────────────────────────
-function dragCleanup(){
-  // Reset tất cả visual state
-  document.querySelectorAll('tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));
-  document.querySelectorAll('tr[data-dragging]').forEach(tr=>{tr.style.opacity='1';tr.removeAttribute('data-dragging');});
-  dragSrcIdx=null;
-}
-function dragStart(e,idx){
-  dragSrcIdx=idx;
-  e.dataTransfer.effectAllowed='move';
-  const tr=e.currentTarget.closest('tr');
-  tr.setAttribute('data-dragging','1');
-  // Delay để browser vẽ ghost image trước
-  requestAnimationFrame(()=>tr.style.opacity='.4');
-}
-function dragEnd(e){
-  dragCleanup();
-}
-function dragOver(e){
-  e.preventDefault();
-  e.dataTransfer.dropEffect='move';
-  const tr=e.currentTarget.closest('tr');
-  document.querySelectorAll('tr.drag-over').forEach(t=>{if(t!==tr) t.classList.remove('drag-over');});
-  tr.classList.add('drag-over');
-}
-async function dragDrop(e,targetIdx){
-  e.preventDefault();
-  e.stopPropagation();
-  // Reset visual TRƯỚC khi re-render
-  dragCleanup();
-  if(dragSrcIdx===null||dragSrcIdx===targetIdx) return;
-  const filtered=getF();
-  const src=filtered[dragSrcIdx],tgt=filtered[targetIdx];
-  if(!src||!tgt||src.sheet!==tgt.sheet){
-    showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);
-    return;
-  }
-  const si=allRows.indexOf(src),ti=allRows.indexOf(tgt);
-  if(si<0||ti<0) return;
-  allRows.splice(si,1);allRows.splice(ti,0,src);
-  const tmpRow=src.rowNum;src.rowNum=tgt.rowNum;tgt.rowNum=tmpRow;
-  renderTable();
-  showAS(true);
-  clearCache();
-  try{
-    await apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[[src.sheet,...src.data.slice(1,8)]]);
-    await apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[[tgt.sheet,...tgt.data.slice(1,8)]]);
-    showToast('dash-toast','Đã đổi vị trí',true);
-  }catch(err){showToast('dash-toast','Lỗi: '+err.message,false);}
-  finally{showAS(false);}
+// Gắn drag events lên toàn bộ <tr> sau mỗi lần renderTable
+function initDragRows(){
+  const tbody=document.getElementById('task-table');
+  if(!tbody) return;
+  let srcIdx=null;
+
+  tbody.querySelectorAll('tr[id^="drow-"]').forEach(tr=>{
+    const idx=parseInt(tr.dataset.idx);
+    const handle=tr.querySelector('.drag-handle');
+    if(!handle) return;
+
+    // Chỉ bắt đầu drag khi nhấn vào handle
+    handle.addEventListener('mousedown',()=>{ tr.setAttribute('draggable','true'); });
+    handle.addEventListener('mouseup',()=>{ tr.removeAttribute('draggable'); });
+
+    tr.addEventListener('dragstart',e=>{
+      srcIdx=idx;
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',String(idx));
+      requestAnimationFrame(()=>tr.classList.add('dragging'));
+    });
+
+    tr.addEventListener('dragend',()=>{
+      tr.classList.remove('dragging');
+      tr.removeAttribute('draggable');
+      tbody.querySelectorAll('tr.drag-over').forEach(t=>t.classList.remove('drag-over'));
+      srcIdx=null;
+    });
+
+    tr.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      tbody.querySelectorAll('tr.drag-over').forEach(t=>{if(t!==tr) t.classList.remove('drag-over');});
+      if(srcIdx!==null && srcIdx!==idx) tr.classList.add('drag-over');
+    });
+
+    tr.addEventListener('dragleave',e=>{
+      // Chỉ remove nếu rời hẳn khỏi tr (không phải vào child element)
+      if(!tr.contains(e.relatedTarget)) tr.classList.remove('drag-over');
+    });
+
+    tr.addEventListener('drop',async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      tr.classList.remove('drag-over');
+      const tgtIdx=idx;
+      if(srcIdx===null||srcIdx===tgtIdx) return;
+
+      const filtered=getF();
+      const src=filtered[srcIdx], tgt=filtered[tgtIdx];
+      if(!src||!tgt){showToast('dash-toast','Lỗi: không tìm thấy task',false);return;}
+      if(src.sheet!==tgt.sheet){showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);return;}
+
+      // Lấy vị trí trong allRows
+      const si=allRows.indexOf(src), ti=allRows.indexOf(tgt);
+      if(si<0||ti<0) return;
+
+      // Swap vị trí trong allRows
+      allRows.splice(si,1);
+      allRows.splice(ti,0,src);
+
+      // Swap rowNum (vị trí trong Sheets)
+      const tmpRowNum=src.rowNum;
+      src.rowNum=tgt.rowNum;
+      tgt.rowNum=tmpRowNum;
+
+      // Re-render UI ngay
+      renderTable();
+      showAS(true);
+      clearCache();
+
+      // Ghi Sheets — ghi đúng nội dung của từng row vào đúng rowNum
+      try{
+        const mkRow=r=>[r.sheet,r.data[1]||'',r.data[2]||'',r.data[3]||'',r.data[4]||'',r.data[5]||'',r.data[6]||'',r.data[7]||''];
+        await Promise.all([
+          apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[mkRow(src)]),
+          apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[mkRow(tgt)]),
+        ]);
+        showToast('dash-toast','Đã đổi vị trí task',true);
+      }catch(err){
+        showToast('dash-toast','Lỗi lưu vị trí: '+err.message,false);
+      }finally{showAS(false);}
+    });
+  });
 }
 
 // ── COL RESIZE ────────────────────────────────────────────────────────────────
