@@ -965,7 +965,10 @@ function renderTable(){
       <td>${actions}</td>
     </tr>`);
   });
-  document.getElementById('task-table').innerHTML=rows.join('');
+  const tbody=document.getElementById('task-table');
+  tbody.innerHTML=rows.join('');
+  // Reset drag init flag vì tbody.innerHTML replace toàn bộ DOM
+  tbody._dragInit=false;
   initColResize();
   initDragRows();
 }
@@ -1134,89 +1137,108 @@ async function doSaveNote(i,v){
 }
 
 // ── DRAG & DROP ───────────────────────────────────────────────────────────────
-// Gắn drag events lên toàn bộ <tr> sau mỗi lần renderTable
+// Dùng biến GLOBAL để tránh closure conflict khi initDragRows chạy nhiều lần
+let _dragSrcIdx=null;
+
+function _dragReset(tbody){
+  if(tbody) tbody.querySelectorAll('tr.drag-over,tr.dragging').forEach(t=>{
+    t.classList.remove('drag-over','dragging');
+    t.removeAttribute('draggable');
+  });
+  _dragSrcIdx=null;
+}
+
+// Delegate tất cả events lên tbody thay vì gắn lên từng tr
+// → không bị duplicate listeners khi renderTable chạy lại
 function initDragRows(){
   const tbody=document.getElementById('task-table');
-  if(!tbody) return;
-  let srcIdx=null;
+  if(!tbody||tbody._dragInit) return;
+  tbody._dragInit=true; // chỉ init 1 lần duy nhất
 
-  tbody.querySelectorAll('tr[id^="drow-"]').forEach(tr=>{
-    const idx=parseInt(tr.dataset.idx);
-    const handle=tr.querySelector('.drag-handle');
+  // ── mousedown trên handle → enable draggable cho tr ──────────────────────
+  tbody.addEventListener('mousedown',e=>{
+    const handle=e.target.closest('.drag-handle');
     if(!handle) return;
+    const tr=handle.closest('tr[id^="drow-"]');
+    if(tr) tr.setAttribute('draggable','true');
+  });
 
-    // Chỉ bắt đầu drag khi nhấn vào handle
-    handle.addEventListener('mousedown',()=>{ tr.setAttribute('draggable','true'); });
-    handle.addEventListener('mouseup',()=>{ tr.removeAttribute('draggable'); });
+  tbody.addEventListener('mouseup',()=>{
+    tbody.querySelectorAll('tr[draggable]').forEach(tr=>tr.removeAttribute('draggable'));
+  });
 
-    tr.addEventListener('dragstart',e=>{
-      srcIdx=idx;
-      e.dataTransfer.effectAllowed='move';
-      e.dataTransfer.setData('text/plain',String(idx));
-      requestAnimationFrame(()=>tr.classList.add('dragging'));
-    });
+  // ── dragstart ─────────────────────────────────────────────────────────────
+  tbody.addEventListener('dragstart',e=>{
+    const tr=e.target.closest('tr[id^="drow-"]');
+    if(!tr||!tr.getAttribute('draggable')) { e.preventDefault(); return; }
+    _dragSrcIdx=parseInt(tr.dataset.idx);
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',String(_dragSrcIdx));
+    requestAnimationFrame(()=>tr.classList.add('dragging'));
+  });
 
-    tr.addEventListener('dragend',()=>{
-      tr.classList.remove('dragging');
-      tr.removeAttribute('draggable');
-      tbody.querySelectorAll('tr.drag-over').forEach(t=>t.classList.remove('drag-over'));
-      srcIdx=null;
-    });
+  // ── dragend ───────────────────────────────────────────────────────────────
+  tbody.addEventListener('dragend',()=>{ _dragReset(tbody); });
 
-    tr.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      tbody.querySelectorAll('tr.drag-over').forEach(t=>{if(t!==tr) t.classList.remove('drag-over');});
-      if(srcIdx!==null && srcIdx!==idx) tr.classList.add('drag-over');
-    });
+  // ── dragover ──────────────────────────────────────────────────────────────
+  tbody.addEventListener('dragover',e=>{
+    e.preventDefault();
+    e.dataTransfer.dropEffect='move';
+    const tr=e.target.closest('tr[id^="drow-"]');
+    if(!tr) return;
+    const tgtIdx=parseInt(tr.dataset.idx);
+    tbody.querySelectorAll('tr.drag-over').forEach(t=>{if(t!==tr) t.classList.remove('drag-over');});
+    if(_dragSrcIdx!==null && _dragSrcIdx!==tgtIdx) tr.classList.add('drag-over');
+  });
 
-    tr.addEventListener('dragleave',e=>{
-      // Chỉ remove nếu rời hẳn khỏi tr (không phải vào child element)
-      if(!tr.contains(e.relatedTarget)) tr.classList.remove('drag-over');
-    });
+  // ── dragleave ─────────────────────────────────────────────────────────────
+  tbody.addEventListener('dragleave',e=>{
+    const tr=e.target.closest('tr.drag-over');
+    if(tr&&!tr.contains(e.relatedTarget)) tr.classList.remove('drag-over');
+  });
 
-    tr.addEventListener('drop',async e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      tr.classList.remove('drag-over');
-      const tgtIdx=idx;
-      if(srcIdx===null||srcIdx===tgtIdx) return;
+  // ── drop ──────────────────────────────────────────────────────────────────
+  tbody.addEventListener('drop',async e=>{
+    e.preventDefault();
+    const tr=e.target.closest('tr[id^="drow-"]');
+    if(!tr) return;
+    const tgtIdx=parseInt(tr.dataset.idx);
+    const srcIdx=_dragSrcIdx;
+    _dragReset(tbody);
 
-      const filtered=getF();
-      const src=filtered[srcIdx], tgt=filtered[tgtIdx];
-      if(!src||!tgt){showToast('dash-toast','Lỗi: không tìm thấy task',false);return;}
-      if(src.sheet!==tgt.sheet){showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);return;}
+    if(srcIdx===null||srcIdx===tgtIdx) return;
 
-      // Lấy vị trí trong allRows
-      const si=allRows.indexOf(src), ti=allRows.indexOf(tgt);
-      if(si<0||ti<0) return;
+    const filtered=getF();
+    const src=filtered[srcIdx], tgt=filtered[tgtIdx];
+    if(!src||!tgt){showToast('dash-toast','Lỗi: không tìm thấy task',false);return;}
+    if(src.sheet!==tgt.sheet){showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);return;}
 
-      // Swap vị trí trong allRows
-      allRows.splice(si,1);
-      allRows.splice(ti,0,src);
+    const si=allRows.indexOf(src), ti=allRows.indexOf(tgt);
+    if(si<0||ti<0) return;
 
-      // Swap rowNum (vị trí trong Sheets)
-      const tmpRowNum=src.rowNum;
-      src.rowNum=tgt.rowNum;
-      tgt.rowNum=tmpRowNum;
+    // Swap vị trí trong allRows
+    allRows.splice(si,1);
+    allRows.splice(ti,0,src);
 
-      // Re-render UI ngay
-      renderTable();
-      showAS(true);
-      clearCache();
+    // Swap rowNum
+    const tmpRowNum=src.rowNum;
+    src.rowNum=tgt.rowNum;
+    tgt.rowNum=tmpRowNum;
 
-      // Ghi Sheets — ghi đúng nội dung của từng row vào đúng rowNum
-      try{
-        const mkRow=r=>[r.sheet,r.data[1]||'',r.data[2]||'',r.data[3]||'',r.data[4]||'',r.data[5]||'',r.data[6]||'',r.data[7]||''];
-        await Promise.all([
-          apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[mkRow(src)]),
-          apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[mkRow(tgt)]),
-        ]);
-        showToast('dash-toast','Đã đổi vị trí task',true);
-      }catch(err){
-        showToast('dash-toast','Lỗi lưu vị trí: '+err.message,false);
-      }finally{showAS(false);}
-    });
+    renderTable();
+    showAS(true);
+    clearCache();
+
+    try{
+      const mkRow=r=>[r.sheet,r.data[1]||'',r.data[2]||'',r.data[3]||'',r.data[4]||'',r.data[5]||'',r.data[6]||'',r.data[7]||''];
+      await Promise.all([
+        apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[mkRow(src)]),
+        apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[mkRow(tgt)]),
+      ]);
+      showToast('dash-toast','Đã đổi vị trí task',true);
+    }catch(err){
+      showToast('dash-toast','Lỗi lưu: '+err.message,false);
+    }finally{showAS(false);}
   });
 }
 
