@@ -151,8 +151,9 @@ tr.row-subtask:hover td{background:#EBF0F7}
 .inline-sel:hover,.inline-sel:focus{border-color:var(--border);background:#fff;outline:none}
 .inline-date{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:115px;transition:border .15s;cursor:pointer}
 .inline-date:hover,.inline-date:focus{border-color:var(--green);background:#fff;outline:none;box-shadow:0 0 0 2px rgba(74,155,127,.1)}
-.inline-note{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:100%;transition:border .15s;resize:none;min-height:28px;overflow:hidden;line-height:1.4;display:block;font-family:inherit}
-.inline-note:hover,.inline-note:focus{border-color:var(--border);background:#fff;outline:none}
+.inline-note{padding:5px 7px;border:1px solid transparent;border-radius:6px;font-size:12px;color:var(--text);background:transparent;width:100%;transition:border .15s;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;display:block;box-sizing:border-box}
+.inline-note:hover{border-color:var(--border);background:#fff;}
+.inline-note:focus{border-color:var(--green);background:#fff;outline:none;white-space:normal;overflow:visible;position:relative;z-index:10;min-width:200px;}
 .dl-late{background:var(--p-pink);color:#8B0000;font-size:11px;padding:2px 6px;border-radius:5px;font-weight:700;display:inline-block;margin-bottom:2px}
 .dl-soon{background:var(--p-orange);color:#7A5000;font-size:11px;padding:2px 6px;border-radius:5px;font-weight:700;display:inline-block;margin-bottom:2px}
 
@@ -644,41 +645,110 @@ async function apiClear(r){const res=await fetch(`https://sheets.googleapis.com/
 async function getSheets(){const res=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SID}`,{headers:await ah()});const d=await res.json();return(d.sheets||[]).map(s=>s.properties.title);}
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────
-async function loadAll(){
+// ── CACHE ──────────────────────────────────────────────────────────────────────
+const CACHE_KEY='nams_cache';
+const CACHE_TTL=5*60*1000; // 5 phút
+
+function saveCache(data){
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data}));}catch(e){}
+}
+function loadCache(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const {ts,data}=JSON.parse(raw);
+    if(Date.now()-ts>CACHE_TTL) return null; // hết hạn
+    return data;
+  }catch(e){return null;}
+}
+function clearCache(){try{localStorage.removeItem(CACHE_KEY);}catch(e){}}
+
+function applyData(cached){
+  allRows=cached.allRows||[];
+  sheetNames=cached.sheetNames||[];
+  projInfoData=cached.projInfoData||{};
+  if(cached.teamMembers&&cached.teamMembers.length>0) teamMembers=cached.teamMembers;
+  allRows.forEach(r=>{r.isSubtask=(r.data[2]||'').startsWith('  ↳');});
+}
+
+async function loadAll(silent=false){
   const btn=document.getElementById('sync-btn');
   btn.disabled=true;btn.textContent='Đang sync...';
-  document.getElementById('task-table').innerHTML='<tr><td colspan="9" class="loading-row"><span class="spinner"></span>Đang tải...</td></tr>';
+
+  // ── BƯỚC 1: Hiện cache ngay nếu có (instant) ──────────────────────────────
+  const cached=loadCache();
+  if(cached){
+    applyData(cached);
+    updateMetrics();renderMonthPills();renderProjCards();renderTable();
+    renderProjInfo();renderTeam();renderToday();populateSelects();
+    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+    if(!activeGantt&&projs.length){activeGantt=projs[0];renderGanttFilter();buildGanttPhases();renderGantt();}
+    document.getElementById('sync-info').textContent=`Từ cache · đang làm mới...`;
+  } else {
+    document.getElementById('task-table').innerHTML='<tr><td colspan="9" class="loading-row"><span class="spinner"></span>Đang tải...</td></tr>';
+  }
+
+  // ── BƯỚC 2: Fetch từ Sheets song song (parallel) ──────────────────────────
   try{
-    sheetNames=await getSheets();allRows=[];
-    for(const name of sheetNames){
-      if(name==='PROJECT_INFO'||name==='USERS'||name.includes('TỔNG HỢP')) continue;
-      const d=await apiGet(`${name}!A3:H500`);
+    const t0=performance.now();
+
+    // Lấy danh sách sheets trước
+    sheetNames=await getSheets();
+    const projSheets=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+
+    // Gọi TẤT CẢ API cùng lúc thay vì tuần tự
+    const [projResults, piResult, tmResult] = await Promise.all([
+      // Tất cả project sheets song song
+      Promise.all(projSheets.map(name=>
+        apiGet(`${name}!A3:H500`).then(d=>({name,d}))
+      )),
+      // PROJECT_INFO và USERS cùng lúc
+      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A3:N20') : Promise.resolve(null),
+      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A25:A50') : Promise.resolve(null),
+    ]);
+
+    // Parse project data
+    allRows=[];
+    projResults.forEach(({name,d})=>{
       if(d.values) d.values.forEach((row,i)=>{
         if(row.some(c=>c&&c.toString().trim()))
           allRows.push({sheet:name,rowNum:i+3,data:[...row],isSubtask:(row[2]||'').startsWith('  ↳')});
       });
-    }
-    // mark subtasks correctly — keep Sheets order
+    });
     allRows.forEach(r=>{r.isSubtask=(r.data[2]||'').startsWith('  ↳');});
-    if(sheetNames.includes('PROJECT_INFO')){
-      const pi=await apiGet('PROJECT_INFO!A3:N20');
-      if(pi.values) pi.values.forEach(r=>{
-        if(r[0]) projInfoData[r[0]]={account:r[1]||'',content:r[2]||'',designer:r[3]||'',editor:r[4]||'',contractDate:r[5]||'',planDate:r[6]||'',content1Date:r[7]||'',content2Date:r[8]||'',linkInternal:r[9]||'',linkExternal:r[10]||'',linkIG:r[11]||'',linkFB:r[12]||'',linkTT:r[13]||''};
-      });
-      const tm=await apiGet('PROJECT_INFO!A25:A50');
-      if(tm.values){const l=tm.values.map(r=>r[0]).filter(Boolean);if(l.length>0) teamMembers=l;}
-    }
-    updateMetrics();renderMonthPills();renderProjCards();renderTable();renderProjInfo();renderTeam();renderToday();populateSelects();
+
+    // Parse PROJECT_INFO
+    if(piResult?.values) piResult.values.forEach(r=>{
+      if(r[0]) projInfoData[r[0]]={
+        account:r[1]||'',content:r[2]||'',designer:r[3]||'',editor:r[4]||'',
+        contractDate:r[5]||'',planDate:r[6]||'',content1Date:r[7]||'',content2Date:r[8]||'',
+        linkInternal:r[9]||'',linkExternal:r[10]||'',linkIG:r[11]||'',linkFB:r[12]||'',linkTT:r[13]||''
+      };
+    });
+    if(tmResult?.values){const l=tmResult.values.map(r=>r[0]).filter(Boolean);if(l.length>0) teamMembers=l;}
+
+    // ── BƯỚC 3: Lưu cache ─────────────────────────────────────────────────────
+    saveCache({allRows,sheetNames,projInfoData,teamMembers});
+
+    // ── BƯỚC 4: Render UI ─────────────────────────────────────────────────────
+    updateMetrics();renderMonthPills();renderProjCards();renderTable();
+    renderProjInfo();renderTeam();renderToday();populateSelects();
     if(document.getElementById('tab-perf')?.classList.contains('active')) renderPerf();
     const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
     activeGantt=projs[0]||'';renderGanttFilter();buildGanttPhases();renderGantt();
+
+    const ms=Math.round(performance.now()-t0);
     const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} rows`;
+    document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} rows · ${ms}ms`;
+
   }catch(e){
-    document.getElementById('task-table').innerHTML=`<tr><td colspan="9" class="loading-row" style="color:#B83030">Lỗi kết nối: ${e.message} <button onclick="loadAll()" style="margin-left:8px;padding:4px 10px;background:var(--slate);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">Thử lại</button></td></tr>`;
-    document.getElementById('sync-info').textContent='Lỗi — nhấn Sync để thử lại';
-    // KHÔNG show login screen khi lỗi load data
-  }finally{btn.disabled=false;btn.textContent='↻ Sync';}
+    if(!cached){
+      document.getElementById('task-table').innerHTML=`<tr><td colspan="9" class="loading-row" style="color:#B83030">Lỗi kết nối: ${e.message} <button onclick="loadAll()" style="margin-left:8px;padding:4px 10px;background:var(--slate);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">Thử lại</button></td></tr>`;
+    }
+    document.getElementById('sync-info').textContent='Lỗi — '+(cached?'đang dùng cache':'nhấn Sync để thử lại');
+  }finally{
+    btn.disabled=false;btn.textContent='↻ Sync';
+  }
 }
 
 function isDone(r){
@@ -887,8 +957,8 @@ function renderTable(){
         </div>
       </td>
       <td>${canEditRow||isAdmin()
-        ?`<textarea class="inline-note" placeholder="Ghi chú..." oninput="autoResizeNote(this);asNote(${i},this.value)" onfocus="autoResizeNote(this)">${noteVal}</textarea>`
-        :`<span style="font-size:12px;color:var(--muted);padding:4px 6px;display:block">${noteVal||'—'}</span>`
+        ?`<input type="text" class="inline-note" value="${noteVal}" placeholder="Ghi chú..." onchange="asNote(${i},this.value)" title="${noteVal}">`
+        :`<span style="font-size:12px;color:var(--muted);padding:4px 6px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${noteVal||''}">${noteVal||'—'}</span>`
       }</td>
       <td>${actions}</td>
     </tr>`);
@@ -1040,6 +1110,7 @@ async function doSaveRow(i){
     updateMetrics();renderProjCards();
     const tr=document.getElementById('drow-'+i);
     if(tr){const ds=dlSt(r);tr.className=r.isSubtask?'row-subtask':ds==='done'?'row-done':ds==='overdue'?'row-overdue':ds==='soon'?'row-soon':'row-normal';}
+    clearCache();
     showToast('dash-toast',`Đã lưu`,true);
   }catch(e){showToast('dash-toast','Lỗi: '+e.message,false);}
   finally{showAS(false);}
@@ -1060,27 +1131,55 @@ async function doSaveNote(i,v){
 }
 
 // ── DRAG & DROP ───────────────────────────────────────────────────────────────
-function dragStart(e,idx){dragSrcIdx=idx;e.dataTransfer.effectAllowed='move';e.currentTarget.closest('tr').style.opacity='.4';}
-function dragEnd(e){e.currentTarget.closest('tr').style.opacity='1';document.querySelectorAll('tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));}
-function dragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';const tr=e.currentTarget.closest('tr');document.querySelectorAll('tr.drag-over').forEach(t=>t.classList.remove('drag-over'));tr.classList.add('drag-over');}
+function dragCleanup(){
+  // Reset tất cả visual state
+  document.querySelectorAll('tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));
+  document.querySelectorAll('tr[data-dragging]').forEach(tr=>{tr.style.opacity='1';tr.removeAttribute('data-dragging');});
+  dragSrcIdx=null;
+}
+function dragStart(e,idx){
+  dragSrcIdx=idx;
+  e.dataTransfer.effectAllowed='move';
+  const tr=e.currentTarget.closest('tr');
+  tr.setAttribute('data-dragging','1');
+  // Delay để browser vẽ ghost image trước
+  requestAnimationFrame(()=>tr.style.opacity='.4');
+}
+function dragEnd(e){
+  dragCleanup();
+}
+function dragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  const tr=e.currentTarget.closest('tr');
+  document.querySelectorAll('tr.drag-over').forEach(t=>{if(t!==tr) t.classList.remove('drag-over');});
+  tr.classList.add('drag-over');
+}
 async function dragDrop(e,targetIdx){
   e.preventDefault();
+  e.stopPropagation();
+  // Reset visual TRƯỚC khi re-render
+  dragCleanup();
   if(dragSrcIdx===null||dragSrcIdx===targetIdx) return;
   const filtered=getF();
   const src=filtered[dragSrcIdx],tgt=filtered[targetIdx];
-  if(!src||!tgt||src.sheet!==tgt.sheet){showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);return;}
+  if(!src||!tgt||src.sheet!==tgt.sheet){
+    showToast('dash-toast','Chỉ kéo thả trong cùng dự án',false);
+    return;
+  }
   const si=allRows.indexOf(src),ti=allRows.indexOf(tgt);
   if(si<0||ti<0) return;
   allRows.splice(si,1);allRows.splice(ti,0,src);
   const tmpRow=src.rowNum;src.rowNum=tgt.rowNum;tgt.rowNum=tmpRow;
-  renderTable();showAS(true);
+  renderTable();
+  showAS(true);
+  clearCache();
   try{
     await apiPut(`${src.sheet}!A${src.rowNum}:H${src.rowNum}`,[[src.sheet,...src.data.slice(1,8)]]);
     await apiPut(`${tgt.sheet}!A${tgt.rowNum}:H${tgt.rowNum}`,[[tgt.sheet,...tgt.data.slice(1,8)]]);
     showToast('dash-toast','Đã đổi vị trí',true);
   }catch(err){showToast('dash-toast','Lỗi: '+err.message,false);}
   finally{showAS(false);}
-  dragSrcIdx=null;
 }
 
 // ── COL RESIZE ────────────────────────────────────────────────────────────────
