@@ -1006,7 +1006,7 @@ async function loadAll(silent=false){
         apiGet(`${name}!A3:H500`).then(d=>({name,d}))
       )),
       // PROJECT_INFO và USERS cùng lúc
-      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A3:Q20') : Promise.resolve(null),
+      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A2:Q30') : Promise.resolve(null),
       sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A25:A50') : Promise.resolve(null),
     ]);
 
@@ -1022,14 +1022,41 @@ async function loadAll(silent=false){
     console.log('[Debug] allRows parsed:', allRows.length, 'rows');
 
     // Parse PROJECT_INFO
-    if(piResult?.values) piResult.values.forEach(r=>{
-      if(r[0]) projInfoData[r[0]]={
-        account:r[1]||'',content:r[2]||'',designer:r[3]||'',editor:r[4]||'',
-        contractDate:r[5]||'',planDate:r[6]||'',content1Date:r[7]||'',content2Date:r[8]||'',
-        linkInternal:r[9]||'',linkExternal:r[10]||'',linkIG:r[11]||'',linkFB:r[12]||'',linkTT:r[13]||'',
-        kbDate:r[14]||'',renewDate:r[15]||'',logoUrl:r[16]||''
+    if(piResult?.values&&piResult.values.length>0){
+      // Dòng đầu = header row để map tên cột → index, tránh lệch cột
+      const piHdr=piResult.values[0]||[];
+      const piIdx=name=>piHdr.findIndex(h=>(h||'').toString().trim()===name);
+      const col=(name,fb)=>{const i=piIdx(name);return i>=0?i:fb;};
+      // Map tên header → fallback index cứng
+      const C={
+        proj:0,account:1,content:2,designer:3,editor:4,
+        contractDate: col('Ngày ký HĐ',5),
+        planDate:     col('Ngày giao Plan',6),
+        content1Date: col('Content Đợt 1',7),
+        content2Date: col('Content Đợt 2',8),
+        linkInternal: col('Link Internal',9),
+        linkExternal: col('Link External',10),
+        linkIG:       col('Link IG',col('IG',11)),
+        linkFB:       col('Link FB',col('FB',12)),
+        linkTT:       col('TikTok',col('TT',13)),
+        kbDate:       col('Ngày gửi KB',col('Ngày gửi Kịch bản',14)),
+        renewDate:    col('Ngày gia hạn HĐ',15),
+        logoUrl:      col('Logo URL',col('Logo Client',16)),
       };
-    });
+      console.log('[Debug] PROJECT_INFO column map:', C);
+      piResult.values.slice(1).forEach(r=>{
+        if(!r[0]) return;
+        projInfoData[r[0]]={
+          account:r[C.account]||'',content:r[C.content]||'',
+          designer:r[C.designer]||'',editor:r[C.editor]||'',
+          contractDate:r[C.contractDate]||'',planDate:r[C.planDate]||'',
+          content1Date:r[C.content1Date]||'',content2Date:r[C.content2Date]||'',
+          linkInternal:r[C.linkInternal]||'',linkExternal:r[C.linkExternal]||'',
+          linkIG:r[C.linkIG]||'',linkFB:r[C.linkFB]||'',linkTT:r[C.linkTT]||'',
+          kbDate:r[C.kbDate]||'',renewDate:r[C.renewDate]||'',logoUrl:r[C.logoUrl]||'',
+        };
+      });
+    }
     if(tmResult?.values){const l=tmResult.values.map(r=>r[0]).filter(Boolean);if(l.length>0) teamMembers=l;}
 
     // ── BƯỚC 3: Lưu cache ─────────────────────────────────────────────────────
