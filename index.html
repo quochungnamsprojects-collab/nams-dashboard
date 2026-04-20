@@ -89,7 +89,7 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 
 /* METRICS */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.metric{background:var(--card);border-radius:14px;padding:18px 20px;border:1px solid var(--border);position:relative;overflow:hidden}
+.metric{background:var(--card);border-radius:14px;padding:18px 20px;border:1px solid var(--border);position:relative;overflow:hidden;transition:all .25s}
 .metric::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.15}
 .metric.m-pink::after{background:var(--p-pink)}
 .metric.m-purple::after{background:var(--p-purple)}
@@ -98,6 +98,27 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 .metric-icon{font-size:22px;margin-bottom:8px;line-height:1}
 .metric-value{font-size:34px;font-weight:800;line-height:1;margin-bottom:4px}
 .metric-label{font-size:13px;color:var(--muted);font-weight:500}
+/* PROJ DETAIL HEADER */
+.metrics-proj{display:none;flex-direction:column;gap:10px;margin-bottom:24px;animation:fadeSlideIn .2s ease}
+.metrics-proj.active{display:flex}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.proj-header-bar{background:var(--card);border-radius:14px;padding:14px 20px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.proj-header-name{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
+.proj-header-links{display:flex;align-items:center;gap:8px}
+.proj-link-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:16px;transition:transform .15s;cursor:pointer;border:1.5px solid transparent}
+.proj-link-icon:hover{transform:scale(1.12)}
+.proj-link-icon.disabled{opacity:.3;pointer-events:none}
+.proj-back-btn{padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;transition:all .15s;white-space:nowrap}
+.proj-back-btn:hover{border-color:var(--slate);color:var(--slate);background:var(--slate4)}
+.proj-cards-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.proj-info-card-sm{background:var(--card);border-radius:12px;padding:14px 16px;border:1px solid var(--border);position:relative;overflow:hidden}
+.proj-info-card-sm.warn{border-color:#FFABAB;background:#FFF8F8}
+.proj-info-card-sm-icon{font-size:18px;margin-bottom:6px;line-height:1}
+.proj-info-card-sm-value{font-size:15px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:3px;word-break:break-word}
+.proj-info-card-sm-label{font-size:11px;color:var(--muted);font-weight:500}
+.proj-progress-bar{height:4px;background:#F0F2F5;border-radius:2px;margin-top:6px;overflow:hidden}
+.proj-progress-fill{height:100%;border-radius:2px;transition:width .4s}
+@media(max-width:900px){.proj-cards-row{grid-template-columns:repeat(3,1fr)}}
 
 /* TABS */
 .section{display:none}.section.active{display:block}
@@ -420,11 +441,16 @@ textarea{height:70px;resize:vertical}
 
 <!-- MAIN CONTENT -->
 <div class="main">
-  <div class="metrics">
+  <div class="metrics" id="metrics-global">
     <div class="metric m-teal"><div class="metric-icon">📁</div><div class="metric-value" id="m-total" style="color:#1A6B5A">—</div><div class="metric-label">Dự án đang chạy</div></div>
     <div class="metric m-pink"><div class="metric-icon">⚠️</div><div class="metric-value" id="m-late" style="color:#B83060">—</div><div class="metric-label">Task trễ deadline</div></div>
     <div class="metric m-purple"><div class="metric-icon">✅</div><div class="metric-value" id="m-done" style="color:#4A3A8A">—</div><div class="metric-label">Tasks hoàn thành</div></div>
     <div class="metric m-blue"><div class="metric-icon">📋</div><div class="metric-value" id="m-tasks" style="color:#3A5A8A">—</div><div class="metric-label">Tổng tasks chính</div></div>
+  </div>
+  <!-- PROJ DETAIL HEADER -->
+  <div class="metrics-proj" id="metrics-proj">
+    <div class="proj-header-bar" id="proj-header-bar"><!-- filled by renderProjHeader --></div>
+    <div class="proj-cards-row" id="proj-cards-row"><!-- filled by renderProjHeader --></div>
   </div>
 
   <!-- DASHBOARD -->
@@ -787,6 +813,105 @@ async function apiClear(r){const res=await fetch(`https://sheets.googleapis.com/
 async function getSheets(){const res=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SID}`,{headers:await ah()});const d=await res.json();return(d.sheets||[]).map(s=>s.properties.title);}
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────
+// ── PROJ DETAIL HEADER ────────────────────────────────────────────────────────
+function renderProjHeader(){
+  const globalEl=document.getElementById('metrics-global');
+  const projEl=document.getElementById('metrics-proj');
+  if(!globalEl||!projEl) return;
+
+  if(activeProj==='ALL'){
+    globalEl.style.display='';
+    projEl.classList.remove('active');
+    return;
+  }
+
+  // Hide global metrics, show proj detail
+  globalEl.style.display='none';
+  projEl.classList.add('active');
+
+  const proj=activeProj;
+  const d=projInfoData[proj]||{};
+  const c=PROJ_COLORS[proj]||'#5B7FA6';
+  const ct=PROJ_TEXT[proj]||'#2A3A4A';
+  const rows=allRows.filter(r=>r.sheet===proj&&!r.isSubtask&&(activeMonth==='ALL'||rowMatchesMonth(r)));
+  const total=rows.length, done=rows.filter(r=>isDone(r)).length;
+  const late=rows.filter(r=>dlSt(r)==='overdue').length;
+  const pct=total?Math.round(done/total*100):0;
+
+  // ── Remind: gia hạn trong 30 ngày? ─────────────────────────────────────────
+  let renewWarn=false, renewDays=null;
+  if(d.renewDate){
+    const parts=d.renewDate.split('/');
+    if(parts.length>=2){
+      const renewDt=parts.length===3
+        ? new Date(parts[2].length===2?'20'+parts[2]:parts[2], parts[1]-1, parts[0])
+        : new Date(new Date().getFullYear(), parts[1]-1, parts[0]);
+      const diff=Math.ceil((renewDt-new Date())/86400000);
+      if(diff>=0&&diff<=30){renewWarn=true;renewDays=diff;}
+    }
+  }
+
+  // ── Platform link icons ─────────────────────────────────────────────────────
+  function linkIcon(url, bgColor, svgContent, label){
+    const hasUrl=url&&url.trim();
+    return `<a class="proj-link-icon ${hasUrl?'':'disabled'}" href="${hasUrl?url:'#'}"
+      target="_blank" style="background:${bgColor};border-color:${bgColor}44"
+      title="${label}${hasUrl?'':' (chưa có link)'}">${svgContent}</a>`;
+  }
+  const igSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C060A0" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="#C060A0" stroke="none"/></svg>`;
+  const fbSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A5FA8" stroke-width="2.5"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>`;
+  const ttSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A8A7A" stroke-width="2.5"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>`;
+  const intSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3D5A7A" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`;
+  const extSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A9B7F" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
+  const links=`<div class="proj-header-links">
+    ${linkIcon(d.linkIG,'#F7D1FF',igSvg,'Instagram')}
+    ${linkIcon(d.linkFB,'#D1E8FF',fbSvg,'Facebook')}
+    ${linkIcon(d.linkTT,'#D1FFF4',ttSvg,'TikTok')}
+    <div style="width:1px;height:24px;background:var(--border);margin:0 2px"></div>
+    ${linkIcon(d.linkInternal,'#E8EDF5',intSvg,'Link Internal')}
+    ${linkIcon(d.linkExternal,'#D4EDE1',extSvg,'Link External')}
+  </div>`;
+
+  // ── Header bar ──────────────────────────────────────────────────────────────
+  document.getElementById('proj-header-bar').innerHTML=`
+    <div class="proj-header-name">
+      <span style="width:14px;height:14px;border-radius:50%;background:${c};display:inline-block;flex-shrink:0"></span>
+      <span style="color:${ct}">${proj}</span>
+      ${late>0?`<span style="font-size:11px;padding:3px 8px;background:#FDDDD8;color:#8B2010;border-radius:6px;font-weight:600">⚠ ${late} task trễ</span>`:''}
+      ${renewWarn?`<span style="font-size:11px;padding:3px 8px;background:#FFF5BA;color:#7A5000;border-radius:6px;font-weight:600">🔔 Gia hạn trong ${renewDays} ngày</span>`:''}
+    </div>
+    ${links}
+    <button class="proj-back-btn" onclick="filterProj('ALL')">← Tất cả dự án</button>`;
+
+  // ── 6 info cards ────────────────────────────────────────────────────────────
+  function infoCard(icon, value, label, opts={}){
+    const warn=opts.warn;
+    const sub=opts.sub||'';
+    const pct=opts.pct;
+    const noLink=!value||value==='—'||value==='';
+    const displayVal=noLink?'—':value;
+    return `<div class="proj-info-card-sm${warn?' warn':''}">
+      <div class="proj-info-card-sm-icon">${icon}</div>
+      <div class="proj-info-card-sm-value" style="${warn?'color:#C04040':''}">${displayVal}</div>
+      ${sub?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${sub}</div>`:''}
+      <div class="proj-info-card-sm-label">${label}</div>
+      ${pct!==undefined?`<div class="proj-progress-bar"><div class="proj-progress-fill" style="width:${pct}%;background:${pct>=80?'#4A9B7F':pct>=50?'#E8B86D':'#E07070'}"></div></div>`:''}
+    </div>`;
+  }
+
+  const pctColor=pct>=80?'#1A6B3A':pct>=50?'#7A5000':'#B83030';
+  document.getElementById('proj-cards-row').innerHTML=`
+    ${infoCard('📊',`${done}/${total}`,`Hoàn thành · ${pct}%`,{sub:`${late>0?`<span style="color:#C04040">${late} trễ hạn</span>`:'Đúng tiến độ'}`,pct})}
+    ${infoCard('📅', d.planDate||'—', 'Ngày giao Plan')}
+    ${infoCard('📄', d.content1Date||'—', 'Content Đợt 1')}
+    ${infoCard('📄', d.content2Date||'—', 'Content Đợt 2')}
+    ${infoCard('🎬', d.kbDate||'—', 'Ngày gửi Kịch bản')}
+    ${infoCard('📝', d.contractDate||'—', 'Ngày ký HĐ')}
+    ${infoCard('🔔', d.renewDate||'—', 'Ngày gia hạn HĐ', {warn:renewWarn})}`;
+}
+
+
 // ── CACHE ──────────────────────────────────────────────────────────────────────
 const CACHE_KEY='nams_cache';
 const CACHE_TTL=5*60*1000; // 5 phút
@@ -821,9 +946,9 @@ async function loadAll(silent=false){
   const cached=loadCache();
   if(cached){
     applyData(cached);
-    updateMetrics();renderMonthPills();renderProjCards();renderTable();
+    updateMetrics();renderMonthPills();renderProjCards();renderProjHeader();renderTable();
     renderProjInfo();renderTeam();renderToday();populateSelects();
-    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
     if(!activeGantt&&projs.length){activeGantt=projs[0];renderGanttFilter();buildGanttPhases();renderGantt();}
     document.getElementById('sync-info').textContent=`Từ cache · đang làm mới...`;
   } else {
@@ -836,7 +961,9 @@ async function loadAll(silent=false){
 
     // Lấy danh sách sheets trước
     sheetNames=await getSheets();
-    const projSheets=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+    console.log('[Debug] Sheets found:', sheetNames);
+    const projSheets=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
+    console.log('[Debug] Project sheets to load:', projSheets);
 
     // Gọi TẤT CẢ API cùng lúc thay vì tuần tự
     const [projResults, piResult, tmResult] = await Promise.all([
@@ -845,7 +972,7 @@ async function loadAll(silent=false){
         apiGet(`${name}!A3:H500`).then(d=>({name,d}))
       )),
       // PROJECT_INFO và USERS cùng lúc
-      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A3:N20') : Promise.resolve(null),
+      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A3:P20') : Promise.resolve(null),
       sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A25:A50') : Promise.resolve(null),
     ]);
 
@@ -858,13 +985,15 @@ async function loadAll(silent=false){
       });
     });
     allRows.forEach(r=>{r.isSubtask=(r.data[2]||'').startsWith('  ↳');});
+    console.log('[Debug] allRows parsed:', allRows.length, 'rows');
 
     // Parse PROJECT_INFO
     if(piResult?.values) piResult.values.forEach(r=>{
       if(r[0]) projInfoData[r[0]]={
         account:r[1]||'',content:r[2]||'',designer:r[3]||'',editor:r[4]||'',
         contractDate:r[5]||'',planDate:r[6]||'',content1Date:r[7]||'',content2Date:r[8]||'',
-        linkInternal:r[9]||'',linkExternal:r[10]||'',linkIG:r[11]||'',linkFB:r[12]||'',linkTT:r[13]||''
+        linkInternal:r[9]||'',linkExternal:r[10]||'',linkIG:r[11]||'',linkFB:r[12]||'',linkTT:r[13]||'',
+        kbDate:r[14]||'',renewDate:r[15]||''
       };
     });
     if(tmResult?.values){const l=tmResult.values.map(r=>r[0]).filter(Boolean);if(l.length>0) teamMembers=l;}
@@ -873,22 +1002,26 @@ async function loadAll(silent=false){
     saveCache({allRows,sheetNames,projInfoData,teamMembers});
 
     // ── BƯỚC 4: Render UI ─────────────────────────────────────────────────────
-    updateMetrics();renderMonthPills();renderProjCards();renderTable();
+    updateMetrics();renderMonthPills();renderProjCards();renderProjHeader();renderTable();
     renderProjInfo();renderTeam();renderToday();populateSelects();
     if(document.getElementById('tab-perf')?.classList.contains('active')) renderPerf();
     if(document.getElementById('tab-history')?.classList.contains('active')) loadHistory(true);
-    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
     activeGantt=projs[0]||'';renderGanttFilter();buildGanttPhases();renderGantt();
 
     const ms=Math.round(performance.now()-t0);
     const now=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('sync-info').textContent=`Sync lúc ${now} · ${allRows.length} rows · ${ms}ms`;
+    const infoMsg = allRows.length===0
+      ? `Sync lúc ${now} · 0 rows · ${projSheets.length} sheets detected · ${ms}ms`
+      : `Sync lúc ${now} · ${allRows.length} rows · ${ms}ms`;
+    document.getElementById('sync-info').textContent=infoMsg;
 
   }catch(e){
+    console.error('[Debug] loadAll error:', e);
     if(!cached){
-      document.getElementById('task-table').innerHTML=`<tr><td colspan="9" class="loading-row" style="color:#B83030">Lỗi kết nối: ${e.message} <button onclick="loadAll()" style="margin-left:8px;padding:4px 10px;background:var(--slate);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">Thử lại</button></td></tr>`;
+      document.getElementById('task-table').innerHTML=`<tr><td colspan="9" class="loading-row" style="color:#B83030">Lỗi: ${e.message} <button onclick="loadAll()" style="margin-left:8px;padding:4px 10px;background:var(--slate);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">Thử lại</button></td></tr>`;
     }
-    document.getElementById('sync-info').textContent='Lỗi — '+(cached?'đang dùng cache':'nhấn Sync để thử lại');
+    document.getElementById('sync-info').textContent=`Lỗi: ${e.message}`;
   }finally{
     btn.disabled=false;btn.textContent='↻ Sync';
   }
@@ -937,7 +1070,7 @@ function rowMatchesMonth(r){
 
 // ── METRICS ───────────────────────────────────────────────────────────────────
 function updateMetrics(){
-  const projs=new Set(sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP')));
+  const projs=new Set(sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP')));
   document.getElementById('m-total').textContent=projs.size;
   const mRows=r=>!r.isSubtask&&(activeMonth==='ALL'||rowMatchesMonth(r));
   document.getElementById('m-late').textContent=allRows.filter(r=>mRows(r)&&dlSt(r)==='overdue').length;
@@ -955,7 +1088,7 @@ function ring(pct,color,bg){
   </svg>`;
 }
 function renderProjCards(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
   // Auto-generate colors for new projects not in PROJ_COLORS
   const autoColors=['#5B7FA6','#4A9B7F','#7A6BAA','#8A6B9A','#7A8A6B','#6B8A9A','#7A8080','#5A7060','#6B7A5A','#8A7A6B'];
   projs.forEach((p,i)=>{if(!PROJ_COLORS[p]) PROJ_COLORS[p]=autoColors[i%autoColors.length];if(!PROJ_TEXT[p]) PROJ_TEXT[p]='#2A3A4A';});
@@ -996,7 +1129,13 @@ function renderProjCards(){
   });
   document.getElementById('proj-cards').innerHTML=allCard+cards.join('');
 }
-function filterProj(p){activeProj=p;renderProjCards();renderTable();document.getElementById('table-title').textContent=p==='ALL'?'Tất cả công việc':p;}
+function filterProj(p){
+  activeProj=p;
+  renderProjCards();
+  renderProjHeader();
+  renderTable();
+  document.getElementById('table-title').textContent=p==='ALL'?'Tất cả công việc':p;
+}
 function applyF(){
   gf=document.getElementById('gf').value;
   sf=document.getElementById('sf').value;
@@ -1128,7 +1267,7 @@ function renderToday(){
   const selMemberVal=memberSel?.value||'ALL';
 
   if(projSel){
-    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+    const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
     projSel.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${selProjVal===p?'selected':''}>${p}</option>`).join('');
   }
   // Members: admin sees all, member only sees self (hide filter)
@@ -1488,7 +1627,7 @@ async function saveSubModal(){
 
 // ── PROJECT INFO ──────────────────────────────────────────────────────────────
 function renderProjInfo(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
   document.getElementById('proj-info-grid').innerHTML=projs.map(proj=>{
     const d=projInfoData[proj]||{};
     const c=PROJ_COLORS[proj]||'#ccc',ct=PROJ_TEXT[proj]||'#333';
@@ -1523,10 +1662,12 @@ function renderProjInfo(){
         </div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:10px">
-        ${piRow('Ngày ký HĐ','contractDate',d,proj,'VD: ngày 15/3')}
-        ${piRow('Ngày gửi Plan','planDate',d,proj,'VD: ngày 22 hàng tháng')}
+        ${piRow('Ngày ký HĐ','contractDate',d,proj,'VD: 01/04/2026')}
+        ${piRow('Ngày gia hạn HĐ','renewDate',d,proj,'VD: 01/07/2026')}
+        ${piRow('Ngày giao Plan','planDate',d,proj,'VD: ngày 22 hàng tháng')}
         ${piRow('Content Đợt 1','content1Date',d,proj,'VD: ngày 28 hàng tháng')}
         ${piRow('Content Đợt 2','content2Date',d,proj,'VD: ngày 5 tháng sau')}
+        ${piRow('Ngày gửi Kịch bản','kbDate',d,proj,'VD: ngày 20 hàng tháng')}
         ${piRow('Link Internal','linkInternal',d,proj,'https://drive.google.com/...')}
         ${piRow('Link External','linkExternal',d,proj,'https://drive.google.com/...')}
       </div>
@@ -1554,7 +1695,7 @@ function updatePlatformLink(proj,platform,val){
   if(linkEl){linkEl.href=val||'#';linkEl.style.opacity=val?'1':'.4';linkEl.style.pointerEvents=val?'auto':'none';}
 }
 async function savePI(proj){
-  const fields=['contractDate','planDate','content1Date','content2Date','linkInternal','linkExternal'];
+  const fields=['contractDate','planDate','content1Date','content2Date','linkInternal','linkExternal','kbDate','renewDate'];
   const vals=fields.map(f=>document.getElementById(`pi-${proj}-${f}`)?.value||'');
   const igVal=document.getElementById(`pi-${proj}-ig`)?.value||'';
   const fbVal=document.getElementById(`pi-${proj}-fb`)?.value||'';
@@ -1567,8 +1708,10 @@ async function savePI(proj){
     const ex=await apiGet('PROJECT_INFO!A3:A20');
     const rows=ex.values||[];
     const ri=rows.findIndex(r=>r[0]===proj);
-    const allVals=[...vals,igVal,fbVal,ttVal];
-    if(ri>=0) await apiPut(`PROJECT_INFO!F${ri+3}:N${ri+3}`,[allVals]);
+    const kbVal=document.getElementById(`pi-${proj}-kbDate`)?.value||'';
+    const renewVal=document.getElementById(`pi-${proj}-renewDate`)?.value||'';
+    const allVals=[...vals,igVal,fbVal,ttVal,kbVal,renewVal];
+    if(ri>=0) await apiPut(`PROJECT_INFO!F${ri+3}:P${ri+3}`,[allVals]);
     else await apiPost('PROJECT_INFO',[[proj,'','','','','',...allVals]]);
     const el=document.getElementById('saved-'+proj);
     el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
@@ -1701,7 +1844,7 @@ async function doClone(){
 
 // ── SELECTS ───────────────────────────────────────────────────────────────────
 function populateSelects(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
   document.getElementById('a-sheet').innerHTML='<option value="">-- Chọn --</option>'+projs.map(n=>`<option>${n}</option>`).join('');
   const pOpts=teamMembers.map(m=>`<option>${m}</option>`).join('');
   ['a-person','sm-person'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=pOpts;});
@@ -1742,7 +1885,7 @@ function dP(dt){return Math.max(0,Math.min(100,(dt-GS)/86400000/TD*100));}
 function dW(s,e){return Math.max(0.2,(e-s)/86400000/TD*100);}
 function getCW(){return Math.round(TD*zl*5);}
 function renderGanttFilter(){
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
   document.getElementById('gantt-filter').innerHTML=projs.map(p=>`<button class="filter-btn ${p===activeGantt?'active':''}" onclick="switchG('${p}')">${p}</button>`).join('');
 }
 function switchG(p){activeGantt=p;renderGanttFilter();buildGanttPhases();renderGantt();}
@@ -1914,7 +2057,7 @@ function renderPerf(){
   const ms=document.getElementById('perf-month');
   if(ms){ms.innerHTML='<option value="ALL">Tất cả tháng</option>'+months.map(m=>`<option value="${m}" ${perfMonth===m?'selected':''}>Tháng ${m}/2026</option>`).join('');}
   const ps=document.getElementById('perf-proj');
-  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&!n.includes('TỔNG HỢP'));
+  const projs=sheetNames.filter(n=>n!=='PROJECT_INFO'&&n!=='USERS'&&n!=='ACTIVITY_LOG'&&!n.includes('TỔNG HỢP'));
   if(ps){ps.innerHTML='<option value="ALL">Tất cả dự án</option>'+projs.map(p=>`<option value="${p}" ${perfProj===p?'selected':''}>${p}</option>`).join('');}
 
   // Filter rows
