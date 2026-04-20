@@ -102,20 +102,20 @@ header{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;disp
 .metrics-proj{display:none;flex-direction:column;gap:10px;margin-bottom:24px;animation:fadeSlideIn .2s ease}
 .metrics-proj.active{display:flex}
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.proj-header-bar{background:var(--card);border-radius:14px;padding:14px 20px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.proj-header-bar{background:var(--card);border-radius:12px;padding:10px 16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .proj-header-name{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
 .proj-header-links{display:flex;align-items:center;gap:8px}
-.proj-link-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:16px;transition:transform .15s;cursor:pointer;border:1.5px solid transparent}
+.proj-link-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px;transition:transform .15s;cursor:pointer;border:1px solid var(--border)}
 .proj-link-icon:hover{transform:scale(1.12)}
 .proj-link-icon.disabled{opacity:.3;pointer-events:none}
 .proj-back-btn{padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;transition:all .15s;white-space:nowrap}
 .proj-back-btn:hover{border-color:var(--slate);color:var(--slate);background:var(--slate4)}
-.proj-cards-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-.proj-info-card-sm{background:var(--card);border-radius:12px;padding:14px 16px;border:1px solid var(--border);position:relative;overflow:hidden}
+.proj-cards-row{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.proj-info-card-sm{background:var(--card);border-radius:10px;padding:10px 14px;border:1px solid var(--border);position:relative;overflow:hidden}
 .proj-info-card-sm.warn{border-color:#FFABAB;background:#FFF8F8}
 .proj-info-card-sm-icon{font-size:18px;margin-bottom:6px;line-height:1}
-.proj-info-card-sm-value{font-size:15px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:3px;word-break:break-word}
-.proj-info-card-sm-label{font-size:11px;color:var(--muted);font-weight:500}
+.proj-info-card-sm-value{font-size:13px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:2px;word-break:break-word}
+.proj-info-card-sm-label{font-size:10px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.03em}
 .proj-progress-bar{height:4px;background:#F0F2F5;border-radius:2px;margin-top:6px;overflow:hidden}
 .proj-progress-fill{height:100%;border-radius:2px;transition:width .4s}
 @media(max-width:900px){.proj-cards-row{grid-template-columns:repeat(3,1fr)}}
@@ -486,7 +486,10 @@ textarea{height:70px;resize:vertical}
             <option value="">Tất cả nhân viên</option>
           </select>
         </div>
-        <span style="font-size:12px;color:var(--faint)">Click tên task để sửa · Thay đổi ô → tự lưu</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="quick-add-btn" onclick="openQuickAdd()" style="display:none;padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#2D6A4F'" onmouseout="this.style.background='var(--green)'">+ Thêm task</button>
+          <span style="font-size:12px;color:var(--faint)">Click tên task để sửa · Thay đổi ô → tự lưu</span>
+        </div>
       </div>
       <div class="table-wrap">
         <table id="main-table" style="table-layout:fixed;width:100%">
@@ -814,6 +817,14 @@ async function getSheets(){const res=await fetch(`https://sheets.googleapis.com/
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────
 // ── PROJ DETAIL HEADER ────────────────────────────────────────────────────────
+function parseDate(str){
+  if(!str) return null;
+  const p=str.split('/');
+  if(p.length===3) return new Date(p[2].length===2?'20'+p[2]:p[2],p[1]-1,p[0]);
+  if(p.length===2) return new Date(new Date().getFullYear(),p[1]-1,p[0]);
+  return null;
+}
+
 function renderProjHeader(){
   const globalEl=document.getElementById('metrics-global');
   const projEl=document.getElementById('metrics-proj');
@@ -825,7 +836,6 @@ function renderProjHeader(){
     return;
   }
 
-  // Hide global metrics, show proj detail
   globalEl.style.display='none';
   projEl.classList.add('active');
 
@@ -838,77 +848,101 @@ function renderProjHeader(){
   const late=rows.filter(r=>dlSt(r)==='overdue').length;
   const pct=total?Math.round(done/total*100):0;
 
-  // ── Remind: gia hạn trong 30 ngày? ─────────────────────────────────────────
+  // Gia hạn remind
   let renewWarn=false, renewDays=null;
-  if(d.renewDate){
-    const parts=d.renewDate.split('/');
-    if(parts.length>=2){
-      const renewDt=parts.length===3
-        ? new Date(parts[2].length===2?'20'+parts[2]:parts[2], parts[1]-1, parts[0])
-        : new Date(new Date().getFullYear(), parts[1]-1, parts[0]);
-      const diff=Math.ceil((renewDt-new Date())/86400000);
-      if(diff>=0&&diff<=30){renewWarn=true;renewDays=diff;}
-    }
-  }
+  const renewDt=parseDate(d.renewDate);
+  if(renewDt){const diff=Math.ceil((renewDt-new Date())/86400000);if(diff>=0&&diff<=30){renewWarn=true;renewDays=diff;}}
 
-  // ── Platform link icons ─────────────────────────────────────────────────────
+  // Brand SVG icons
+  const igSvg=`<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="ig-g" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/>
+      <stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/>
+      <stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+    <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig-g)"/>
+    <rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="white" stroke-width="0"/>
+    <circle cx="12" cy="12" r="4.5" fill="none" stroke="white" stroke-width="1.8"/>
+    <circle cx="17" cy="7" r="1.2" fill="white"/>
+  </svg>`;
+  const fbSvg=`<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <rect width="24" height="24" rx="6" fill="#1877F2"/>
+    <path d="M16 8h-2a1 1 0 0 0-1 1v2h3l-.5 3H13v7h-3v-7H8v-3h2V9a4 4 0 0 1 4-4h2v3z" fill="white"/>
+  </svg>`;
+  const ttSvg=`<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <rect width="24" height="24" rx="6" fill="#010101"/>
+    <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5 2.592 2.592 0 0 1-2.59-2.5 2.592 2.592 0 0 1 2.59-2.5c.28 0 .54.04.79.1V9.78a6.066 6.066 0 0 0-.79-.05A5.682 5.682 0 0 0 4.18 15.4 5.682 5.682 0 0 0 9.86 21a5.682 5.682 0 0 0 5.68-5.6V8.87a7.721 7.721 0 0 0 4.63 1.53V7.31c-1.95-.07-3.57-1.49-3.57-1.49z" fill="white"/>
+  </svg>`;
+  // Internal = google drive icon style
+  const intSvg=`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2L2 19h20L12 2z" fill="#4285F4" opacity=".8"/>
+    <path d="M2 19l7-12h10L12 2 2 19z" fill="#0F9D58" opacity=".6"/>
+    <path d="M22 19H2l7-12h6l7 12z" fill="#FBBC04" opacity=".8"/>
+  </svg>`;
+  // External = share/link icon
+  const extSvg=`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4A9B7F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+  </svg>`;
+
   function linkIcon(url, bgColor, svgContent, label){
-    const hasUrl=url&&url.trim();
-    return `<a class="proj-link-icon ${hasUrl?'':'disabled'}" href="${hasUrl?url:'#'}"
-      target="_blank" style="background:${bgColor};border-color:${bgColor}44"
-      title="${label}${hasUrl?'':' (chưa có link)'}">${svgContent}</a>`;
+    const has=url&&url.trim();
+    return `<a class="proj-link-icon ${has?'':'disabled'}" href="${has||'#'}" target="_blank"
+      style="background:${bgColor}" title="${label}${has?'':' — chưa có link'}">${svgContent}</a>`;
   }
-  const igSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C060A0" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="#C060A0" stroke="none"/></svg>`;
-  const fbSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A5FA8" stroke-width="2.5"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>`;
-  const ttSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A8A7A" stroke-width="2.5"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>`;
-  const intSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3D5A7A" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`;
-  const extSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A9B7F" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
 
-  const links=`<div class="proj-header-links">
-    ${linkIcon(d.linkIG,'#F7D1FF',igSvg,'Instagram')}
-    ${linkIcon(d.linkFB,'#D1E8FF',fbSvg,'Facebook')}
-    ${linkIcon(d.linkTT,'#D1FFF4',ttSvg,'TikTok')}
-    <div style="width:1px;height:24px;background:var(--border);margin:0 2px"></div>
-    ${linkIcon(d.linkInternal,'#E8EDF5',intSvg,'Link Internal')}
+  // Client logo
+  const logoHtml=d.logoUrl
+    ?`<img src="${d.logoUrl}" alt="${proj}" style="height:32px;max-width:80px;object-fit:contain;border-radius:6px;border:1px solid var(--border)">`
+    :`<div style="width:32px;height:32px;border-radius:8px;background:${c};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${proj.slice(0,2)}</div>`;
+
+  const links=`<div class="proj-header-links" style="gap:6px">
+    ${linkIcon(d.linkIG,'transparent',igSvg,'Instagram')}
+    ${linkIcon(d.linkFB,'transparent',fbSvg,'Facebook')}
+    ${linkIcon(d.linkTT,'transparent',ttSvg,'TikTok')}
+    <div style="width:1px;height:22px;background:var(--border);margin:0 2px"></div>
+    ${linkIcon(d.linkInternal,'#EBF0F7',intSvg,'Google Drive (Internal)')}
     ${linkIcon(d.linkExternal,'#D4EDE1',extSvg,'Link External')}
   </div>`;
 
-  // ── Header bar ──────────────────────────────────────────────────────────────
   document.getElementById('proj-header-bar').innerHTML=`
-    <div class="proj-header-name">
-      <span style="width:14px;height:14px;border-radius:50%;background:${c};display:inline-block;flex-shrink:0"></span>
-      <span style="color:${ct}">${proj}</span>
-      ${late>0?`<span style="font-size:11px;padding:3px 8px;background:#FDDDD8;color:#8B2010;border-radius:6px;font-weight:600">⚠ ${late} task trễ</span>`:''}
-      ${renewWarn?`<span style="font-size:11px;padding:3px 8px;background:#FFF5BA;color:#7A5000;border-radius:6px;font-weight:600">🔔 Gia hạn trong ${renewDays} ngày</span>`:''}
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+      ${logoHtml}
+      <div style="min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:16px;font-weight:800;color:${ct}">${proj}</span>
+          ${late>0?`<span style="font-size:11px;padding:2px 7px;background:#FDDDD8;color:#8B2010;border-radius:5px;font-weight:600">⚠ ${late} trễ</span>`:''}
+          ${renewWarn?`<span style="font-size:11px;padding:2px 7px;background:#FFF5BA;color:#7A5000;border-radius:5px;font-weight:600">🔔 Gia hạn ${renewDays}d</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${done}/${total} tasks · ${pct}% hoàn thành</div>
+      </div>
     </div>
     ${links}
-    <button class="proj-back-btn" onclick="filterProj('ALL')">← Tất cả dự án</button>`;
+    <button class="proj-back-btn" onclick="filterProj('ALL')">← Tất cả</button>`;
 
-  // ── 6 info cards ────────────────────────────────────────────────────────────
+  // Info cards — compact 1 row
   function infoCard(icon, value, label, opts={}){
     const warn=opts.warn;
-    const sub=opts.sub||'';
     const pct=opts.pct;
-    const noLink=!value||value==='—'||value==='';
-    const displayVal=noLink?'—':value;
+    const empty=!value||value==='—'||value==='';
     return `<div class="proj-info-card-sm${warn?' warn':''}">
-      <div class="proj-info-card-sm-icon">${icon}</div>
-      <div class="proj-info-card-sm-value" style="${warn?'color:#C04040':''}">${displayVal}</div>
-      ${sub?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${sub}</div>`:''}
-      <div class="proj-info-card-sm-label">${label}</div>
-      ${pct!==undefined?`<div class="proj-progress-bar"><div class="proj-progress-fill" style="width:${pct}%;background:${pct>=80?'#4A9B7F':pct>=50?'#E8B86D':'#E07070'}"></div></div>`:''}
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:14px">${icon}</span>
+        <span class="proj-info-card-sm-label" style="font-size:10px">${label}</span>
+      </div>
+      <div class="proj-info-card-sm-value" style="font-size:13px;${warn?'color:#C04040':''}">${empty?'—':value}</div>
+      ${opts.sub?`<div style="font-size:10px;color:var(--muted);margin-top:1px">${opts.sub}</div>`:''}
+      ${pct!==undefined?`<div class="proj-progress-bar" style="margin-top:5px"><div class="proj-progress-fill" style="width:${pct}%;background:${pct>=80?'#4A9B7F':pct>=50?'#E8B86D':'#E07070'}"></div></div>`:''}
     </div>`;
   }
 
-  const pctColor=pct>=80?'#1A6B3A':pct>=50?'#7A5000':'#B83030';
   document.getElementById('proj-cards-row').innerHTML=`
-    ${infoCard('📊',`${done}/${total}`,`Hoàn thành · ${pct}%`,{sub:`${late>0?`<span style="color:#C04040">${late} trễ hạn</span>`:'Đúng tiến độ'}`,pct})}
-    ${infoCard('📅', d.planDate||'—', 'Ngày giao Plan')}
-    ${infoCard('📄', d.content1Date||'—', 'Content Đợt 1')}
-    ${infoCard('📄', d.content2Date||'—', 'Content Đợt 2')}
-    ${infoCard('🎬', d.kbDate||'—', 'Ngày gửi Kịch bản')}
-    ${infoCard('📝', d.contractDate||'—', 'Ngày ký HĐ')}
-    ${infoCard('🔔', d.renewDate||'—', 'Ngày gia hạn HĐ', {warn:renewWarn})}`;
+    ${infoCard('📊',`${done}/${total}`,`Tiến độ`,{sub:late>0?`<span style="color:#C04040">⚠ ${late} trễ hạn</span>`:'✓ Đúng hạn',pct})}
+    ${infoCard('📅',d.planDate||'—','Ngày giao Plan')}
+    ${infoCard('📋',d.content1Date||'—','Content Đợt 1')}
+    ${infoCard('📋',d.content2Date||'—','Content Đợt 2')}
+    ${infoCard('🎬',d.kbDate||'—','Ngày gửi KB')}
+    ${infoCard('📝',d.contractDate||'—','Ngày ký HĐ')}
+    ${infoCard('🔔',d.renewDate||'—','Gia hạn HĐ',{warn:renewWarn})}`;
 }
 
 
@@ -972,7 +1006,7 @@ async function loadAll(silent=false){
         apiGet(`${name}!A3:H500`).then(d=>({name,d}))
       )),
       // PROJECT_INFO và USERS cùng lúc
-      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A3:P20') : Promise.resolve(null),
+      sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A3:Q20') : Promise.resolve(null),
       sheetNames.includes('PROJECT_INFO') ? apiGet('PROJECT_INFO!A25:A50') : Promise.resolve(null),
     ]);
 
@@ -993,7 +1027,7 @@ async function loadAll(silent=false){
         account:r[1]||'',content:r[2]||'',designer:r[3]||'',editor:r[4]||'',
         contractDate:r[5]||'',planDate:r[6]||'',content1Date:r[7]||'',content2Date:r[8]||'',
         linkInternal:r[9]||'',linkExternal:r[10]||'',linkIG:r[11]||'',linkFB:r[12]||'',linkTT:r[13]||'',
-        kbDate:r[14]||'',renewDate:r[15]||''
+        kbDate:r[14]||'',renewDate:r[15]||'',logoUrl:r[16]||''
       };
     });
     if(tmResult?.values){const l=tmResult.values.map(r=>r[0]).filter(Boolean);if(l.length>0) teamMembers=l;}
@@ -1135,6 +1169,8 @@ function filterProj(p){
   renderProjHeader();
   renderTable();
   document.getElementById('table-title').textContent=p==='ALL'?'Tất cả công việc':p;
+  const qaBtn=document.getElementById('quick-add-btn');
+  if(qaBtn) qaBtn.style.display=p==='ALL'?'none':'inline-block';
 }
 function applyF(){
   gf=document.getElementById('gf').value;
@@ -1670,6 +1706,7 @@ function renderProjInfo(){
         ${piRow('Ngày gửi Kịch bản','kbDate',d,proj,'VD: ngày 20 hàng tháng')}
         ${piRow('Link Internal','linkInternal',d,proj,'https://drive.google.com/...')}
         ${piRow('Link External','linkExternal',d,proj,'https://drive.google.com/...')}
+        ${piRow('Logo Client (URL)','logoUrl',d,proj,'https://... (link ảnh logo)')}
       </div>
       <div style="display:flex;align-items:center;margin-top:12px">
         <button class="info-save-btn" onclick="savePI('${proj}')">Lưu</button>
@@ -1695,7 +1732,7 @@ function updatePlatformLink(proj,platform,val){
   if(linkEl){linkEl.href=val||'#';linkEl.style.opacity=val?'1':'.4';linkEl.style.pointerEvents=val?'auto':'none';}
 }
 async function savePI(proj){
-  const fields=['contractDate','planDate','content1Date','content2Date','linkInternal','linkExternal','kbDate','renewDate'];
+  const fields=['contractDate','planDate','content1Date','content2Date','linkInternal','linkExternal','kbDate','renewDate','logoUrl'];
   const vals=fields.map(f=>document.getElementById(`pi-${proj}-${f}`)?.value||'');
   const igVal=document.getElementById(`pi-${proj}-ig`)?.value||'';
   const fbVal=document.getElementById(`pi-${proj}-fb`)?.value||'';
@@ -1711,7 +1748,7 @@ async function savePI(proj){
     const kbVal=document.getElementById(`pi-${proj}-kbDate`)?.value||'';
     const renewVal=document.getElementById(`pi-${proj}-renewDate`)?.value||'';
     const allVals=[...vals,igVal,fbVal,ttVal,kbVal,renewVal];
-    if(ri>=0) await apiPut(`PROJECT_INFO!F${ri+3}:P${ri+3}`,[allVals]);
+    if(ri>=0) await apiPut(`PROJECT_INFO!F${ri+3}:Q${ri+3}`,[allVals]);
     else await apiPost('PROJECT_INFO',[[proj,'','','','','',...allVals]]);
     const el=document.getElementById('saved-'+proj);
     el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
@@ -2820,6 +2857,69 @@ function renderHistTable(items){
 }
 
 
+// ── QUICK ADD TASK ────────────────────────────────────────────────────────────
+function openQuickAdd(){
+  if(activeProj==='ALL') return;
+  const title=document.getElementById('qa-modal-title');
+  const projLabel=document.getElementById('qa-modal-proj');
+  const c=PROJ_COLORS[activeProj]||'#5B7FA6';
+  if(title) title.textContent='Thêm task vào ' + activeProj;
+  if(projLabel){
+    projLabel.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;margin-right:4px"></span>${activeProj}`;
+  }
+  // Populate person select
+  const pSel=document.getElementById('qa-person');
+  if(pSel) pSel.innerHTML=teamMembers.map(m=>`<option>${m}</option>`).join('');
+  // Auto-select current user if member
+  if(!isAdmin()&&currentUser&&pSel){
+    const idx=[...pSel.options].findIndex(o=>o.value===currentUser.name);
+    if(idx>=0) pSel.selectedIndex=idx;
+  }
+  // Clear fields
+  ['qa-task','qa-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const dl=document.getElementById('qa-deadline');if(dl)dl.value='';
+  const prio=document.getElementById('qa-priority');if(prio)prio.value='P3 - BÌNH THƯỜNG';
+  document.getElementById('quick-add-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('qa-task')?.focus(),100);
+}
+
+function closeQuickAdd(){
+  document.getElementById('quick-add-modal').classList.remove('open');
+}
+
+async function saveQuickAdd(){
+  const sheet=activeProj;
+  if(!sheet||sheet==='ALL') return;
+  const task=document.getElementById('qa-task')?.value.trim();
+  const group=document.getElementById('qa-group')?.value||'PLAN';
+  const person=document.getElementById('qa-person')?.value||'';
+  const deadlineRaw=document.getElementById('qa-deadline')?.value||'';
+  const deadline=deadlineRaw&&deadlineRaw.includes('-')?fromISODate(deadlineRaw):deadlineRaw;
+  const priority=document.getElementById('qa-priority')?.value||'P3 - BÌNH THƯỜNG';
+  const note=document.getElementById('qa-note')?.value.trim()||'';
+  if(!task){showToast('qa-toast','Vui lòng nhập tên công việc',false);return;}
+
+  const btn=document.getElementById('qa-save-btn');
+  btn.disabled=true;btn.textContent='Đang thêm...';
+
+  // Optimistic: add to allRows
+  const newRow={sheet,rowNum:999999,data:[sheet,group,task,person,deadline,priority,'Mới',note],isSubtask:false};
+  allRows.push(newRow);
+  updateMetrics();renderMonthPills();renderProjCards();renderProjHeader();renderTable();
+
+  writeLog('add_task',sheet,task,'','Mới','');
+  closeQuickAdd();
+  showToast('dash-toast',`Đã thêm: ${task}`,true);
+
+  // Write to Sheets in background
+  try{
+    await apiPost(sheet,[[sheet,group,task,person,deadline,priority,'Mới',note]]);
+    clearCache();
+  }catch(e){
+    showToast('dash-toast','⚠ Task đã thêm vào UI nhưng lỗi ghi Sheets: '+e.message,false);
+  }finally{btn.disabled=false;btn.textContent='Thêm task';}
+}
+
 // ── DATE HELPERS ─────────────────────────────────────────────────────────────
 // dd/mm/yyyy → yyyy-mm-dd (for <input type=date>)
 function toISODate(str){
@@ -2923,6 +3023,48 @@ document.addEventListener('DOMContentLoaded', function(){
       <button class="btn-cancel" onclick="document.getElementById('user-confirm-modal').classList.remove('open')">Huỷ</button>
       <button class="btn-save-modal" id="ucm-confirm-btn">Xác nhận</button>
     </div>
+  </div>
+</div>
+
+
+<!-- QUICK ADD TASK MODAL -->
+<div class="modal-overlay" id="quick-add-modal">
+  <div class="modal" style="width:480px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1">
+        <div class="modal-title" style="margin:0" id="qa-modal-title">Thêm task mới</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="qa-modal-proj"></div>
+      </div>
+      <button onclick="closeQuickAdd()" style="background:none;border:none;font-size:20px;color:var(--faint);cursor:pointer;line-height:1">×</button>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:12px">
+      <div><div class="modal-label">Nhóm *</div>
+        <select id="qa-group" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;background:#fff">
+          <option>PLAN</option><option>CONTENT</option><option>KỊCH BẢN</option>
+          <option>PRODUCTION</option><option>CÔNG VIỆC PHÁT SINH</option>
+        </select>
+      </div>
+      <div><div class="modal-label">Người phụ trách</div><select id="qa-person" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;background:#fff"></select></div>
+    </div>
+    <div class="modal-row"><div class="modal-label">Tên công việc *</div>
+      <input type="text" id="qa-task" placeholder="VD: [T5] Content · Đợt 1 · Post 1..." onkeydown="if(event.key==='Enter')saveQuickAdd()">
+    </div>
+    <div class="form-grid-2">
+      <div><div class="modal-label">Deadline</div><input type="date" id="qa-deadline"></div>
+      <div><div class="modal-label">Ưu tiên</div>
+        <select id="qa-priority" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;background:#fff">
+          <option>P1 - ƯU TIÊN</option><option>P2 - QUAN TRỌNG</option><option selected>P3 - BÌNH THƯỜNG</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-row"><div class="modal-label">Ghi chú</div>
+      <input type="text" id="qa-note" placeholder="Ghi chú...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeQuickAdd()">Huỷ</button>
+      <button class="btn-save-modal" id="qa-save-btn" onclick="saveQuickAdd()">Thêm task</button>
+    </div>
+    <div class="toast" id="qa-toast"></div>
   </div>
 </div>
 
