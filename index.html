@@ -488,6 +488,9 @@ textarea{height:70px;resize:vertical}
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <button id="quick-add-btn" onclick="openQuickAdd()" style="display:none;padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#2D6A4F'" onmouseout="this.style.background='var(--green)'">+ Thêm task</button>
+          <button onclick="openBulkComplete()" title="Hoàn thành toàn bộ task của tháng đang xem" style="padding:7px 14px;background:#EBF0F7;color:var(--slate);border:1.5px solid var(--slate3);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.background='var(--slate4)'" onmouseout="this.style.background='#EBF0F7'">✓ Hoàn thành tháng</button>
+          <button onclick="expandAll()" title="Mở rộng tất cả subtask" style="padding:7px 10px;background:#fff;color:var(--muted);border:1.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer" title="Thu gọn/Mở rộng subtask">⊞</button>
+          <button onclick="collapseAll()" title="Thu gọn tất cả subtask" style="padding:7px 10px;background:#fff;color:var(--muted);border:1.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer">⊟</button>
           <span style="font-size:12px;color:var(--faint)">Click tên task để sửa · Thay đổi ô → tự lưu</span>
         </div>
       </div>
@@ -760,7 +763,7 @@ const PROJ_LIST=['NHÀ VUI','CICILIA DANANG','NOOK','NÓN HUẾ','MANDILA','AVAT
 const PROJ_COLORS={'NHÀ VUI':'#5B7FA6','CICILIA DANANG':'#7A6BAA','NOOK':'#4A9B7F','NÓN HUẾ':'#8A6B9A','MANDILA':'#7A8A6B','AVATAR':'#6B8A9A','HOSHIGAMI':'#7A8080'};
 const PROJ_TEXT={'NHÀ VUI':'#2A4A6A','CICILIA DANANG':'#3A2A7A','NOOK':'#1A5A4A','NÓN HUẾ':'#4A2A6A','MANDILA':'#3A4A2A','AVATAR':'#2A4A5A','HOSHIGAMI':'#3A4848'};
 const AIR_GROUPS=['CONTENT','EDIT VIDEO','KỊCH BẢN'];
-const STATUSES=['Mới','Đang thực hiện','Đang đợi duyệt','Khách đã duyệt','Đã gửi khách','Hoàn thành','Đã AIR'];
+const STATUSES=['Mới','Đang thực hiện','Đang đợi duyệt','Khách đã duyệt','Đã gửi khách','Đã lên lịch','Hoàn thành','Đã AIR'];
 const PRIORITIES=['P1 - ƯU TIÊN','P2 - QUAN TRỌNG','P3 - BÌNH THƯỜNG'];
 const MONTHS_VN=['','T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 const SOW={
@@ -780,6 +783,7 @@ const STATUS_CFG={
   'Đang đợi duyệt':  {bg:'#EBF0F7',color:'#4A5A6A',dot:'#7A8A9A',icon:'◑'},
   'Khách đã duyệt':  {bg:'#D4EDE1',color:'#1A5A3A',dot:'#3A8A5A',icon:'◕'},
   'Đã gửi khách':    {bg:'#E5E0F5',color:'#3A2A6A',dot:'#6A5AAA',icon:'◉'},
+  'Đã lên lịch':     {bg:'#E0EDF8',color:'#2A5A8A',dot:'#4A8ACA',icon:'📆'},
   'Hoàn thành':      {bg:'#D4EDE1',color:'#1A5A3A',dot:'#2A8A55',icon:'●'},
   'Đã AIR':          {bg:'#C5D5E8',color:'#2A4A6A',dot:'#5B7FA6',icon:'★'},
 };
@@ -891,8 +895,27 @@ function renderProjHeader(){
   }
 
   // Client logo
-  const logoHtml=d.logoUrl
-    ?`<img src="${d.logoUrl}" alt="${proj}" style="height:32px;max-width:80px;object-fit:contain;border-radius:6px;border:1px solid var(--border)">`
+  // Convert mọi dạng Google Drive link sang direct image URL
+  function toDirectImgUrl(url){
+    if(!url) return '';
+    // drive.google.com/file/d/ID/view → uc?export=view&id=ID
+    let m=url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+    if(m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+    // drive.google.com/open?id=ID
+    m=url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+    if(m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+    // share.google/... hoặc các dạng rút gọn → không convert được, trả về rỗng
+    if(url.includes('share.google')||url.includes('goo.gl')) return '';
+    // uc?id=ID (đã đúng dạng)
+    if(url.includes('drive.google.com/uc')) return url;
+    return url; // URL khác (imgur, v.v.) giữ nguyên
+  }
+  const logoSrc=toDirectImgUrl(d.logoUrl||'');
+  const logoHtml=logoSrc
+    ?`<img src="${logoSrc}" alt="${proj}"
+        style="height:32px;max-width:80px;object-fit:contain;border-radius:6px;border:1px solid var(--border)"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      ><div style="display:none;width:32px;height:32px;border-radius:8px;background:${c};align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${proj.slice(0,2)}</div>`
     :`<div style="width:32px;height:32px;border-radius:8px;background:${c};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${proj.slice(0,2)}</div>`;
 
   const links=`<div class="proj-header-links" style="gap:6px">
@@ -1090,7 +1113,8 @@ async function loadAll(silent=false){
 
 function isDone(r){
   const g=r.data[1]||'',s=(r.data[6]||'').trim();
-  return AIR_GROUPS.includes(g)?s==='Đã AIR':s==='Hoàn thành'||s==='Đã AIR';
+  if(AIR_GROUPS.includes(g)) return s==='Đã AIR'||s==='Đã lên lịch'||s==='Hoàn thành';
+  return s==='Hoàn thành'||s==='Đã AIR'||s==='Đã lên lịch';
 }
 function dlSt(r){
   if(isDone(r)) return 'done';
@@ -1249,7 +1273,23 @@ function renderTable(){
   }
   const filtered=getF();
   if(!filtered.length){document.getElementById('task-table').innerHTML='<tr><td colspan="9" class="loading-row">Không có dữ liệu</td></tr>';return;}
-  const rows=[];let lastGroup='';
+
+  // Build set of which parent tasks have subtasks
+  const hasSubtask=new Set();
+  for(let i=1;i<filtered.length;i++){
+    if(filtered[i].isSubtask) hasSubtask.add(`${filtered[i-1].sheet}|${filtered[i-1].rowNum}`);
+  }
+  // Also check ahead (subtask might be 2+ rows away if parent has multiple subtasks)
+  filtered.forEach((r,i)=>{
+    if(r.isSubtask){
+      // find nearest non-subtask above
+      for(let j=i-1;j>=0;j--){
+        if(!filtered[j].isSubtask){hasSubtask.add(`${filtered[j].sheet}|${filtered[j].rowNum}`);break;}
+      }
+    }
+  });
+
+  const rows=[];let lastGroup='';let lastParentKey=null;
   filtered.forEach((r,i)=>{
     const d=r.data,g=d[1]||'';
     const groupKey=r.sheet+'|'+g;
@@ -1263,12 +1303,37 @@ function renderTable(){
       rows.push(`<tr class="row-group-hdr"><td colspan="9"><span style="color:${c};margin-right:5px">●</span>${r.sheet} · ${g||'—'}</td></tr>`);
       lastGroup=groupKey;
     }
+
+    // Collapse logic
+    const parentKey=`${r.sheet}|${r.rowNum}`;
+    if(r.isSubtask){
+      // Find parent key
+      if(lastParentKey&&_collapsedTasks.has(lastParentKey)) return; // skip collapsed subtask
+    } else {
+      lastParentKey=parentKey;
+    }
+
+    const isParentWithSubs=!r.isSubtask&&hasSubtask.has(parentKey);
+    const isCollapsed=_collapsedTasks.has(parentKey);
+
     const dragHandle=`<span class="drag-handle" title="Kéo để sắp xếp">⠿</span>`;
     const projCell=r.isSubtask?`<div style="font-size:11px;color:#ccc;padding-left:12px">↳ sub</div>`:`<div style="font-size:12px;font-weight:700;color:${ct}">${r.sheet}</div>`;
     const rawName=(d[2]||'').replace(/^\s*↳\s*/,'');
-    const nameCell=`<div style="${r.isSubtask?'padding-left:18px;':''}display:flex;align-items:center;gap:6px">
+
+    // Toggle button for tasks with subtasks
+    const toggleBtn=isParentWithSubs
+      ?`<button onclick="toggleSubtasks('${parentKey}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--slate);padding:0 3px;flex-shrink:0;line-height:1;border-radius:3px;transition:all .15s" title="${isCollapsed?'Mở rộng subtask':'Thu gọn subtask'}">${isCollapsed?'▶':'▼'}</button>`
+      :'<span style="width:16px;display:inline-block"></span>';
+
+    const subCount=isCollapsed&&isParentWithSubs
+      ?`<span style="font-size:10px;color:var(--muted);background:var(--slate4);padding:1px 5px;border-radius:4px;margin-left:4px">${countSubtasks(i,filtered)} sub</span>`
+      :'';
+
+    const nameCell=`<div style="${r.isSubtask?'padding-left:18px;':''}display:flex;align-items:center;gap:4px">
       ${r.isSubtask?'<span style="color:#ccc;font-size:12px;flex-shrink:0">↳</span>':''}
+      ${!r.isSubtask?toggleBtn:''}
       <span class="task-name-display" id="tn-${i}" onclick="editTaskName(${i},this)" style="${r.isSubtask?'color:#777;font-style:italic;':'font-weight:500;'}font-size:13px" title="Click để sửa">${rawName}</span>
+      ${subCount}
     </div>`;
     const dlStr=d[4]||'';
     const dlIso=toISODate(dlStr);
@@ -1499,6 +1564,7 @@ async function doSaveNote(i,v){
 // ── DRAG & DROP ───────────────────────────────────────────────────────────────
 // Dùng biến GLOBAL để tránh closure conflict khi initDragRows chạy nhiều lần
 let _dragSrcIdx=null;
+const _collapsedTasks=new Set(); // lưu key 'sheet|rowNum' của task cha đang thu gọn
 
 function _dragReset(tbody){
   if(tbody) tbody.querySelectorAll('tr.drag-over,tr.dragging').forEach(t=>{
@@ -1733,7 +1799,7 @@ function renderProjInfo(){
         ${piRow('Ngày gửi Kịch bản','kbDate',d,proj,'VD: ngày 20 hàng tháng')}
         ${piRow('Link Internal','linkInternal',d,proj,'https://drive.google.com/...')}
         ${piRow('Link External','linkExternal',d,proj,'https://drive.google.com/...')}
-        ${piRow('Logo Client (URL)','logoUrl',d,proj,'https://... (link ảnh logo)')}
+        ${piRow('Logo Client (URL)','logoUrl',d,proj,'https://drive.google.com/file/d/FILE_ID/view hoặc link ảnh .png/.jpg')}
       </div>
       <div style="display:flex;align-items:center;margin-top:12px">
         <button class="info-save-btn" onclick="savePI('${proj}')">Lưu</button>
@@ -2947,6 +3013,143 @@ async function saveQuickAdd(){
   }finally{btn.disabled=false;btn.textContent='Thêm task';}
 }
 
+// ── SUBTASK COLLAPSE ──────────────────────────────────────────────────────────
+function countSubtasks(parentIdx, filtered){
+  let count=0;
+  for(let j=parentIdx+1;j<filtered.length;j++){
+    if(filtered[j].isSubtask) count++;
+    else break;
+  }
+  return count;
+}
+
+function toggleSubtasks(parentKey){
+  if(_collapsedTasks.has(parentKey)) _collapsedTasks.delete(parentKey);
+  else _collapsedTasks.add(parentKey);
+  renderTable();
+}
+
+function collapseAll(){
+  const filtered=getF();
+  filtered.forEach((r,i)=>{
+    if(!r.isSubtask){
+      const key=`${r.sheet}|${r.rowNum}`;
+      if(hasSubtaskFn(i,filtered)) _collapsedTasks.add(key);
+    }
+  });
+  renderTable();
+}
+
+function expandAll(){
+  _collapsedTasks.clear();
+  renderTable();
+}
+
+function hasSubtaskFn(idx,filtered){
+  return idx+1<filtered.length&&filtered[idx+1].isSubtask;
+}
+
+// ── BULK COMPLETE ─────────────────────────────────────────────────────────────
+function getTargetStatusForRow(r){
+  const g=r.data[1]||'';
+  // CONTENT group: "Đã AIR" (broadcast) — user có thể chọn
+  // Các nhóm khác: "Hoàn thành"
+  return AIR_GROUPS.includes(g)?window._bulkCompleteStatus||'Hoàn thành':'Hoàn thành';
+}
+
+function openBulkComplete(){
+  if(!isAdmin()&&!currentUser){showToast('dash-toast','Không có quyền',false);return;}
+  const month=activeMonth==='ALL'?null:activeMonth;
+  const proj=activeProj==='ALL'?null:activeProj;
+
+  // Count pending tasks in scope
+  const targets=allRows.filter(r=>{
+    if(isDone(r)) return false;
+    if(month&&!(r.data[2]||'').includes(`[T${month}]`)) return false;
+    if(proj&&r.sheet!==proj) return false;
+    return true;
+  });
+
+  if(!targets.length){
+    showToast('dash-toast','Không có task nào cần cập nhật',true);
+    return;
+  }
+
+  // Count by type
+  const contentCount=targets.filter(r=>AIR_GROUPS.includes(r.data[1]||'')).length;
+  const otherCount=targets.length-contentCount;
+  const scopeLabel=proj?`dự án ${proj}`:'tất cả dự án';
+  const monthLabel=month?`tháng ${month}`:'tất cả tháng';
+
+  document.getElementById('bc-scope-text').innerHTML=
+    `Hoàn thành toàn bộ task <strong>${monthLabel}</strong> · <strong>${scopeLabel}</strong>:<br>
+     <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block">
+       ${targets.length} task cần cập nhật
+       ${contentCount>0?`(${contentCount} CONTENT/KB/EDIT VIDEO + ${otherCount} nhóm khác)`:``}
+     </span>`;
+
+  // Show content status selector only if there are content tasks
+  document.getElementById('bc-content-row').style.display=contentCount>0?'block':'none';
+  document.getElementById('bc-content-status').value='Đã AIR';
+
+  document.getElementById('bulk-complete-modal').classList.add('open');
+}
+
+async function runBulkComplete(){
+  const month=activeMonth==='ALL'?null:activeMonth;
+  const proj=activeProj==='ALL'?null:activeProj;
+  const contentStatus=document.getElementById('bc-content-status')?.value||'Đã AIR';
+
+  const targets=allRows.filter(r=>{
+    if(isDone(r)) return false;
+    if(month&&!(r.data[2]||'').includes(`[T${month}]`)) return false;
+    if(proj&&r.sheet!==proj) return false;
+    return true;
+  });
+
+  if(!targets.length) return;
+
+  const btn=document.getElementById('bc-run-btn');
+  btn.disabled=true;btn.textContent='Đang xử lý...';
+
+  const total=targets.length;
+  let done=0,failed=0;
+
+  // Process in batches of 5 to avoid rate limit
+  for(let i=0;i<targets.length;i+=5){
+    const batch=targets.slice(i,i+5);
+    await Promise.all(batch.map(async r=>{
+      const g=r.data[1]||'';
+      // Content/KB/Edit → contentStatus (Đã AIR hoặc Đã lên lịch)
+      // Subtask → same as parent group logic
+      const newStatus=AIR_GROUPS.includes(g)?contentStatus:'Hoàn thành';
+      try{
+        await apiPut(`${r.sheet}!G${r.rowNum}`,[[newStatus]]);
+        r.data[6]=newStatus;
+        done++;
+        btn.textContent=`Đang xử lý ${done}/${total}...`;
+      }catch(e){failed++;}
+    }));
+    // Small delay between batches to avoid rate limit
+    if(i+5<targets.length) await new Promise(res=>setTimeout(res,200));
+  }
+
+  clearCache();
+  updateMetrics();renderMonthPills();renderProjCards();renderProjHeader();renderTable();
+  document.getElementById('bulk-complete-modal').classList.remove('open');
+
+  const msg=failed>0
+    ?`Đã cập nhật ${done}/${total} tasks (${failed} lỗi)`
+    :`✓ Đã hoàn thành ${done} tasks`;
+  showToast('dash-toast',msg,failed===0);
+
+  // Log
+  const scopeLabel=(proj||'Tất cả')+' T'+(month||'');
+  writeLog('bulk_complete',proj||'ALL',`Bulk complete ${scopeLabel}`,'','Hoàn thành','');
+
+  btn.disabled=false;btn.textContent='Xác nhận hoàn thành';
+}
+
 // ── DATE HELPERS ─────────────────────────────────────────────────────────────
 // dd/mm/yyyy → yyyy-mm-dd (for <input type=date>)
 function toISODate(str){
@@ -3092,6 +3295,33 @@ document.addEventListener('DOMContentLoaded', function(){
       <button class="btn-save-modal" id="qa-save-btn" onclick="saveQuickAdd()">Thêm task</button>
     </div>
     <div class="toast" id="qa-toast"></div>
+  </div>
+</div>
+
+
+<!-- BULK COMPLETE MODAL -->
+<div class="modal-overlay" id="bulk-complete-modal">
+  <div class="modal" style="width:440px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="font-size:24px">✅</span>
+      <div class="modal-title" style="margin:0">Hoàn thành toàn bộ task</div>
+    </div>
+    <div id="bc-scope-text" style="background:var(--slate4);border-radius:9px;padding:12px 14px;font-size:13px;color:var(--text);margin-bottom:14px;line-height:1.6"></div>
+    <div id="bc-content-row" class="modal-row">
+      <div class="modal-label">Trạng thái cho task CONTENT / KỊCH BẢN / EDIT VIDEO</div>
+      <select id="bc-content-status" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;background:#fff">
+        <option value="Đã AIR">★ Đã AIR</option>
+        <option value="Đã lên lịch">📆 Đã lên lịch</option>
+        <option value="Hoàn thành">● Hoàn thành</option>
+      </select>
+    </div>
+    <div style="background:#FFF5BA;border-radius:8px;padding:10px 12px;font-size:12px;color:#7A5000;margin-bottom:14px">
+      ⚠️ Thao tác này sẽ cập nhật tất cả task chưa hoàn thành. Không thể hoàn tác tự động.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('bulk-complete-modal').classList.remove('open')">Huỷ</button>
+      <button class="btn-save-modal" id="bc-run-btn" onclick="runBulkComplete()">Xác nhận hoàn thành</button>
+    </div>
   </div>
 </div>
 
